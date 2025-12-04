@@ -1,4 +1,4 @@
-package server.http;
+package server.connection.http;
 
 import common.Request;
 import common.Response;
@@ -8,7 +8,7 @@ import common.http.response.HttpResponseBody;
 import common.http.response.HttpResponseHeader;
 import common.http.response.HttpResponseType;
 import common.response.ResponseHeader;
-import server.ClientHandler;
+import server.connection.ClientHandler;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

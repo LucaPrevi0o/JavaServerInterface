@@ -1,4 +1,4 @@
-package server.http;
+package server.connection.http;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

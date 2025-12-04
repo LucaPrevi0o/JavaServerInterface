@@ -1,6 +1,5 @@
-package server.http;
+package server.connection.http;
 
-import server.Server;
 import common.Request;
 import common.Response;
 import common.http.response.HttpResponseType;
@@ -8,6 +7,8 @@ import common.http.response.HttpResponseHeader;
 import common.http.response.HttpResponseBody;
 import common.http.HttpResponse;
 import common.response.ResponseHeader;
+import server.connection.ConnectionServer;
+
 import java.util.List;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -19,7 +20,7 @@ import java.nio.charset.StandardCharsets;
  * Abstract HTTP server implementation with routing support.
  * Extend this class and register routes in the registerRoutes() method.
  */
-public abstract class HttpServer extends Server<HttpClientHandler> {
+public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
 
     /*
      * Inner class representing a routed method.

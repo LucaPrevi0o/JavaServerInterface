@@ -1,4 +1,4 @@
-package server;
+package server.connection;
 
 import java.net.Socket;
 import java.io.BufferedReader;
