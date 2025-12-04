@@ -1,20 +1,8 @@
 package server.connection.database;
 
-public abstract class Query {
+import common.Request;
 
-    private QueryType type;
-
-    /**
-     * Get the type of the query.
-     * @return the QueryType
-     */
-    public QueryType getType() { return type; }
-
-    /**
-     * Constructor for Query.
-     * @param type the QueryType
-     */
-    public Query(QueryType type) { this.type = type; }
+public abstract class Query extends Request {
 
     /**
      * Execute the query using the provided DatabaseEngine.

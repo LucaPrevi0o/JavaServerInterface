@@ -1,7 +1,5 @@
 package server.connection.database;
 
-import common.Response;
-
 public interface DatabaseEngine {
 
     /**
@@ -9,7 +7,7 @@ public interface DatabaseEngine {
      * @param query the Query to execute
      * @return the Response from the execution
      */
-    Response execute(Query query);
+    QueryResult execute(Query query);
 
     /**
      * Begin a transaction.

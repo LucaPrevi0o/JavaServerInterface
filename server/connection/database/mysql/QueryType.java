@@ -1,4 +1,4 @@
-package server.connection.database;
+package server.connection.database.mysql;
 
 public enum QueryType {
     

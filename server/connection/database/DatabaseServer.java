@@ -2,7 +2,7 @@ package server.connection.database;
 
 import server.connection.ConnectionServer;
 
-public abstract class DatabaseServer extends ConnectionServer<DatabaseClientHandler> {
+public abstract class DatabaseServer<T extends DatabaseClientHandler> extends ConnectionServer<T> {
 
     private DatabaseEngine databaseEngine;
 
@@ -21,15 +21,4 @@ public abstract class DatabaseServer extends ConnectionServer<DatabaseClientHand
      * @return the DatabaseEngine
      */
     public DatabaseEngine getDatabaseEngine() { return databaseEngine; }
-
-    /**
-     * Create a DatabaseClientHandler instance for the connected client.
-     * @param clientSocket the socket connected to the client
-     * @return the DatabaseClientHandler instance
-     */
-    @Override
-    protected DatabaseClientHandler createClientHandler(java.net.Socket clientSocket) {
-        return new DatabaseClientHandler(clientSocket);
-    }
-    
 }

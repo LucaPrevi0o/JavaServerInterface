@@ -3,27 +3,39 @@ package server.connection.database;
 import java.net.Socket;
 
 import common.Request;
-import common.Response;
 import server.connection.ClientHandler;
 
-public class DatabaseClientHandler extends ClientHandler {
+public abstract class DatabaseClientHandler extends ClientHandler {
+
+    protected final Socket clientSocket;
+    private DatabaseEngine databaseEngine;
     
     /**
      * Constructor for DatabaseClientHandler.
      */
-    public DatabaseClientHandler(Socket clientSocket) {
-        super(clientSocket);
+    public DatabaseClientHandler(Socket clientSocket, DatabaseEngine databaseEngine) {
+
+        this.clientSocket = clientSocket;
+        this.databaseEngine = databaseEngine;
     }
 
+    /**
+     * Parse the incoming request string into a Query object.
+     * @param input the input string representing the request
+     * @return the parsed Query object
+     */
     @Override
-    protected Request parseRequest(String input) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'parseRequest'");
-    }
+    protected abstract Query parseRequest(String input);
 
+    /**
+     * Create a QueryResult object based on the given Query.
+     * @param request the Request object
+     * @return the created QueryResult object
+     */
     @Override
-    protected Response createResponse(Request request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createResponse'");
+    protected QueryResult createResponse(Request request) {
+        
+        var query = parseRequest(request.toString());
+        return databaseEngine.execute(query);
     }
 }
