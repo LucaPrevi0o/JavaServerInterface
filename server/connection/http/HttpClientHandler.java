@@ -1,7 +1,6 @@
 package server.connection.http;
 
 import common.Request;
-import common.Response;
 import common.http.HttpRequest;
 import common.http.HttpResponse;
 import common.http.response.HttpResponseBody;
@@ -10,21 +9,54 @@ import common.http.response.HttpResponseType;
 import common.response.ResponseHeader;
 import server.connection.ClientHandler;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class HttpClientHandler extends ClientHandler {
 
+    private final Socket clientSocket;
     private List<HttpServer.RoutedMethod> routes;
 
     /**
      * Constructor for HttpClientHandler.
      * @param clientSocket the socket connected to the client
      */
-    public HttpClientHandler(java.net.Socket clientSocket, List<HttpServer.RoutedMethod> routes) { 
+    public HttpClientHandler(Socket clientSocket, List<HttpServer.RoutedMethod> routes) { 
         
-        super(clientSocket);
+        this.clientSocket = clientSocket;
         this.routes = routes;
+    }
+    
+    @Override
+    public void run() {
+        
+        try (var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
+             var out = new PrintWriter(clientSocket.getOutputStream(), true, StandardCharsets.UTF_8)) {
+            
+            // Read all input from client
+            var requestBuilder = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null && !line.isEmpty())
+                requestBuilder.append(line).append("\r\n");
+            
+            var fullRequest = requestBuilder.toString();
+            
+            // Parse the request
+            var request = parseRequest(fullRequest);
+
+            // Create and send response
+            var response = createResponse(request);
+            out.print(response.serialize());
+            out.flush();
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -33,7 +65,7 @@ public class HttpClientHandler extends ClientHandler {
      * @return the parsed Request object
      */
     @Override
-    protected Request parseRequest(String input) { return new HttpRequest().parse(input); }
+    protected HttpRequest parseRequest(String input) { return new HttpRequest().parse(input); }
 
     /**
      * Create a response based on the incoming request.
@@ -41,7 +73,7 @@ public class HttpClientHandler extends ClientHandler {
      * @return the generated HTTP response
      */
     @Override
-    protected Response createResponse(Request request) {
+    protected HttpResponse createResponse(Request request) {
 
         var path = extractPath(request);
         for (var handler : routes) if (handler.getPath().equals(path)) {
@@ -72,7 +104,7 @@ public class HttpClientHandler extends ClientHandler {
      * @param request the HTTP request
      * @return a 404 Not Found response
      */
-    protected Response handleNotFound(Request request) {
+    protected HttpResponse handleNotFound(Request request) {
 
         String content = "<html><body><h1>404 - Not Found</h1><p>The requested resource was not found.</p></body></html>";
         

@@ -56,7 +56,7 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
          * @return the generated HTTP response
          * @throws Exception if an error occurs during method invocation
          */
-        public Response handle(Request request) throws Exception {
+        public HttpResponse handle(Request request) throws Exception {
 
             // If staticResource is specified, serve the file directly
             if (staticResource != null && !staticResource.isEmpty()) {
@@ -65,7 +65,7 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
             
             // Otherwise, invoke the handler method
             method.setAccessible(true);
-            return (Response) method.invoke(HttpServer.this, request);
+            return (HttpResponse) method.invoke(HttpServer.this, request);
         }
     }
 
@@ -108,7 +108,7 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
      * @param filePath the path to the HTML file (relative or absolute)
      * @return HTTP response with the file content or 500 error if file cannot be read
      */
-    protected Response serveHtmlFile(String filePath) {
+    protected HttpResponse serveHtmlFile(String filePath) {
         return serveFile(filePath, "text/html; charset=UTF-8");
     }
 
@@ -121,7 +121,7 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
      * @return HTTP response with the file content or 500 error if file cannot be read
      */
     @Override
-    protected Response serveFile(String filePath, String contentType) {
+    protected HttpResponse serveFile(String filePath, String contentType) {
 
         try {
 
@@ -145,7 +145,7 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
      * @param error the exception that occurred
      * @return a 500 Internal Server Error response
      */
-    protected Response handleFileReadError(String filePath, IOException error) {
+    protected HttpResponse handleFileReadError(String filePath, IOException error) {
 
         String content = "<html><body><h1>500 - Internal Server Error</h1>" +
                         "<p>Could not read file: " + filePath + "</p>" +
