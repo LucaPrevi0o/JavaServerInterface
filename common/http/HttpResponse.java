@@ -10,6 +10,14 @@ import common.response.ResponseBody;
  */
 public class HttpResponse extends Response {
     
+    private ResponseType responseType;
+    private ResponseHeader[] headers;
+    private ResponseBody body;
+
+    public ResponseType getResponseType() { return responseType; }
+    public ResponseHeader[] getHeaders() { return headers; }
+    public ResponseBody getBody() { return body; }
+    
     /**
      * Constructor for HttpResponse.
      */
@@ -21,7 +29,12 @@ public class HttpResponse extends Response {
      * @param headers HTTP response headers.
      * @param body HTTP response body.
      */
-    public HttpResponse(ResponseType responseType, ResponseHeader[] headers, ResponseBody body) { super(responseType, headers, body); }
+    public HttpResponse(ResponseType responseType, ResponseHeader[] headers, ResponseBody body) { 
+        
+        this.responseType = responseType;
+        this.headers = headers;
+        this.body = body;
+    }
 
     /**
      * Serialize the HTTP response to a string format suitable for transmission.
