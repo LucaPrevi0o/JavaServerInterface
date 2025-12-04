@@ -1,10 +1,10 @@
 *
 
 !.gitignore
-# !client/
+!README.md
+!jmake
 !common/
 !server/
 
-# !client/**
 !common/**
 !server/**

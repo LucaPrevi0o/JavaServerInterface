@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# jmake - simple Java project helper
+# Usage: ./jmake [command]
+# Commands:
+#   run   - run the main class (Axiom)
+#   jar   - build executable jar (axiom.jar)
+#   all   - compile and run
+#   clean - remove compiled classes and jar
+#   (no arg) - compile sources
+
+usage() {
+  cat <<EOF
+${0##*/} - simple Java project helper
+
+Usage: ${0##*/} [command]
+
+Commands:
+  run       Compile and run the main class (${MAIN_CLASS})
+  jar       Build executable jar (${JAR_NAME})
+  all       Compile and run (alias for run)
+  clean     Remove compiled classes and the jar
+  help      Show this help message
+  (no arg)  Compile sources only
+
+Examples:
+  ${0##*/}            # compile
+  ${0##*/} run        # compile and run
+  ${0##*/} jar        # create axiom.jar
+  ${0##*/} clean      # remove build artifacts
+EOF
+}
+
+set -euo pipefail
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+JAVA_OUT_DIR="$ROOT_DIR/java"
+JAR_NAME="test.jar"
+MAIN_CLASS="Test"
+
+# Collect library jars (if any) under lib/
+LIB_DIR="$ROOT_DIR/lib"
+CLASSPATH_JARS=""
+if [ -d "$LIB_DIR" ]; then
+  # build colon-separated classpath of jars (only jars directly in lib/)
+  jars=$(find "$LIB_DIR" -maxdepth 1 -name "*.jar" 2>/dev/null | sort)
+  if [ -n "$jars" ]; then
+    CLASSPATH_JARS=$(echo "$jars" | tr '\n' ':')
+    # remove trailing colon
+    CLASSPATH_JARS=${CLASSPATH_JARS%:}
+  fi
+fi
+
+compile() {
+  echo "Compiling Java sources..."
+  mkdir -p "$JAVA_OUT_DIR"
+  # collect project java files (excluding build dir)
+  proj_srcs=$(find "$ROOT_DIR" -maxdepth 2 -name "*.java" -not -path "$JAVA_OUT_DIR/*")
+  # collect lib module java sources recursively under lib/* if no jar exists for the module
+  lib_srcs=""
+  if [ -d "$LIB_DIR" ]; then
+    for m in "$LIB_DIR"/*; do
+      # if a jar for this module exists in lib/ root, skip compiling its sources
+      module_base=$(basename "$m")
+      if [ -f "$LIB_DIR/$module_base.jar" ]; then
+        # skip source compilation for this module since a jar is present
+        continue
+      fi
+      # Prefer standard Maven layout if present, otherwise include any .java files under the module
+      if [ -d "$m/src/main/java" ]; then
+        paths=$(find "$m/src/main/java" -name "*.java")
+      else
+        paths=$(find "$m" -name "*.java")
+      fi
+      if [ -n "$paths" ]; then
+        if [ -z "$lib_srcs" ]; then
+          lib_srcs="$paths"
+        else
+          lib_srcs="$lib_srcs $paths"
+        fi
+      fi
+    done
+  fi
+
+  srcs="$proj_srcs $lib_srcs"
+  if [ -z "$srcs" ]; then
+    echo "No Java sources found."
+    return
+  fi
+  if [ -n "$CLASSPATH_JARS" ]; then
+    javac -cp "$CLASSPATH_JARS" -d "$JAVA_OUT_DIR" $srcs
+  else
+    javac -d "$JAVA_OUT_DIR" $srcs
+  fi
+  echo "Compiled to $JAVA_OUT_DIR"
+}
+
+build_jar() {
+  compile
+  echo "Building $JAR_NAME (Main-Class: $MAIN_CLASS)..."
+  # create manifest on the fly and package
+  # If there are lib jars, add a Class-Path entry so they can be found next to the jar
+  if [ -n "$CLASSPATH_JARS" ]; then
+    # Build space-separated relative paths for Class-Path (relative to jar location)
+    classpath_entry=""
+    for j in $(echo "$CLASSPATH_JARS" | tr ':' '\n'); do
+      # use relative path from jar: lib/<basename>
+      base=$(basename "$j")
+      classpath_entry="$classpath_entry lib/$base"
+    done
+    printf "Class-Path:%s\nMain-Class: %s\n" "$classpath_entry" "$MAIN_CLASS" > "$JAVA_OUT_DIR/manifest.mf"
+    jar --create --file "$ROOT_DIR/$JAR_NAME" --manifest "$JAVA_OUT_DIR/manifest.mf" -C "$JAVA_OUT_DIR" .
+  else
+    jar --create --file "$ROOT_DIR/$JAR_NAME" --manifest <(printf "Main-Class: %s\n" "$MAIN_CLASS") -C "$JAVA_OUT_DIR" .
+  fi
+  echo "Created $JAR_NAME"
+}
+
+run_main() {
+  echo "Running $MAIN_CLASS..."
+  if [ -n "$CLASSPATH_JARS" ]; then
+    java -cp "$JAVA_OUT_DIR:$CLASSPATH_JARS" "$MAIN_CLASS"
+  else
+    java -cp "$JAVA_OUT_DIR" "$MAIN_CLASS"
+  fi
+}
+
+clean() {
+  echo "Cleaning compiled classes and $JAR_NAME..."
+  rm -rf "$JAVA_OUT_DIR"
+  rm -f "$ROOT_DIR/$JAR_NAME"
+  echo "Clean complete."
+}
+
+case "${1-}" in
+  help|-h|--help)
+    usage
+    ;;
+  run)
+    run_main
+    ;;
+  jar)
+    build_jar
+    ;;
+  all)
+    compile
+    run_main
+    ;;
+  clean)
+    clean
+    ;;
+  "" )
+    compile
+    ;;
+  *)
+    echo "Usage: ${0##*/} [run|jar|all|clean|help]"
+    exit 1
+    ;;
+esac
