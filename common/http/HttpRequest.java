@@ -4,9 +4,7 @@ import common.Request;
 import common.http.request.HttpRequestHeader;
 import common.http.request.HttpRequestParameter;
 import common.http.request.HttpRequestType;
-import common.request.RequestHeader;
-import common.request.RequestParameter;
-import common.request.RequestType;
+import java.util.ArrayList;
 
 /**
  * Class representing an HTTP request.
@@ -15,9 +13,16 @@ import common.request.RequestType;
 public class HttpRequest extends Request {
 
     private String path;
+    private HttpRequestType requestType;
+    private HttpRequestParameter[] parameters;
+    private HttpRequestHeader[] headers;
 
     /** Default constructor for HttpRequest. */
     public HttpRequest() { this(null, null, null); }
+
+    public HttpRequestType getHttpRequestType() { return requestType; }
+    public HttpRequestParameter[] getParameters() { return parameters; }
+    public HttpRequestHeader[] getHeaders() { return headers; }
 
     /**
      * Constructor for HttpRequest.
@@ -25,8 +30,11 @@ public class HttpRequest extends Request {
      * @param parameters the parameters of the HTTP request
      * @param headers the headers of the HTTP request
      */
-    public HttpRequest(RequestType requestType, RequestParameter[] parameters, RequestHeader[] headers) { 
-        super(requestType, parameters, headers); 
+    public HttpRequest(HttpRequestType requestType, HttpRequestParameter[] parameters, HttpRequestHeader[] headers) { 
+
+        this.requestType = requestType;
+        this.parameters = parameters;
+        this.headers = headers;
     }
 
     /**
@@ -36,18 +44,11 @@ public class HttpRequest extends Request {
     public String getPath() { return path; }
 
     /**
-     * Set the path for this HTTP request.
-     * @param path the request path
-     */
-    private void setPath(String path) { this.path = path; }
-
-    /**
      * Get the request type from the input string.
      * @param input the input string representing the request
      * @return the request type
      */
-    @Override
-    protected RequestType getRequestType(String input) {
+    protected HttpRequestType getRequestType(String input) {
 
         // Implementation for extracting HTTP request type from input
         if (input == null || input.isEmpty()) return null;
@@ -62,31 +63,30 @@ public class HttpRequest extends Request {
     * @param input the input string representing the request
     * @return an array of request parameters
     */
-    @Override
-    protected RequestParameter[] getRequestParameters(String input) {
+    protected HttpRequestParameter[] getRequestParameters(String input) {
 
-        if (input == null || input.isEmpty())  return new RequestParameter[0];
+        if (input == null || input.isEmpty())  return new HttpRequestParameter[0];
 
         // Split the request into lines
         var lines = input.split("\\r?\\n");
-        if (lines.length == 0) return new RequestParameter[0];
+        if (lines.length == 0) return new HttpRequestParameter[0];
 
         // Extract query parameters from the request line (e.g., GET /path?key=value HTTP/1.1)
         var requestLine = lines[0];
         var parts = requestLine.split("\\s+");
         
-        if (parts.length < 2) return new RequestParameter[0];
+        if (parts.length < 2) return new HttpRequestParameter[0];
 
         var uri = parts[1]; // e.g., "/path?key1=value1&key2=value2"
         
         // Check if there's a query string
         var queryIndex = uri.indexOf('?');
-        if (queryIndex == -1) return new RequestParameter[0];
+        if (queryIndex == -1) return new HttpRequestParameter[0];
 
         var queryString = uri.substring(queryIndex + 1);
         var params = queryString.split("&");
         
-        var requestParameters = new RequestParameter[params.length];
+        var requestParameters = new HttpRequestParameter[params.length];
         
         for (int i = 0; i < params.length; i++) {
 
@@ -117,17 +117,16 @@ public class HttpRequest extends Request {
      * @param input the input string representing the request
      * @return an array of request headers
      */
-    @Override
-    protected RequestHeader[] getRequestHeaders(String input) {
+    protected HttpRequestHeader[] getRequestHeaders(String input) {
 
-        if (input == null || input.isEmpty()) return new RequestHeader[0];
+        if (input == null || input.isEmpty()) return new HttpRequestHeader[0];
 
         // Split the request into lines
         var lines = input.split("\\r?\\n");
-        if (lines.length <= 1) return new RequestHeader[0];
+        if (lines.length <= 1) return new HttpRequestHeader[0];
 
         // Skip the first line (request line) and parse headers
-        var headerList = new java.util.ArrayList<RequestHeader>();
+        var headerList = new ArrayList<HttpRequestHeader>();
         
         for (int i = 1; i < lines.length; i++) {
 
@@ -146,7 +145,7 @@ public class HttpRequest extends Request {
             }
         }
         
-        return headerList.toArray(new RequestHeader[0]);
+        return headerList.toArray(new HttpRequestHeader[0]);
     }
 
     /**
@@ -156,8 +155,7 @@ public class HttpRequest extends Request {
      * @param headers the request headers
      * @return a new HttpRequest instance
      */
-    @Override
-    protected HttpRequest createRequest(RequestType type, RequestParameter[] params, RequestHeader[] headers) {
+    protected HttpRequest createRequest(HttpRequestType type, HttpRequestParameter[] params, HttpRequestHeader[] headers) {
         return new HttpRequest(type, params, headers);
     }
 
@@ -169,8 +167,11 @@ public class HttpRequest extends Request {
     @Override
     public HttpRequest parse(String input) {
 
-        HttpRequest request = (HttpRequest) super.parse(input);
-        request.setPath(extractPath(input));
+        var type = getRequestType(input);
+        var params = getRequestParameters(input);
+        var headers = getRequestHeaders(input);
+        var request = createRequest(type, params, headers);
+        request.path = extractPath(input);
         return request;
     }
 
