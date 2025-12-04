@@ -12,20 +12,23 @@ usage() {
   cat <<EOF
 ${0##*/} - simple Java project helper
 
-Usage: ${0##*/} [command]
+Usage: ${0##*/} [command] [options]
 
 Commands:
+  compile   Compile sources only (default action with no command)
   run       Compile and run the main class (${MAIN_CLASS})
   jar       Build executable jar (${JAR_NAME})
   all       Compile and run (alias for run)
   clean     Remove compiled classes and the jar
   help      Show this help message
-  (no arg)  Compile sources only
+
+Options:
+  -n <class>  Specify the main class name (overrides default: ${MAIN_CLASS})
 
 Examples:
   ${0##*/}            # compile
-  ${0##*/} run        # compile and run
-  ${0##*/} jar        # create axiom.jar
+  ${0##*/} run        # run
+  ${0##*/} jar        # create ${JAR_NAME}
   ${0##*/} clean      # remove build artifacts
 EOF
 }
@@ -33,8 +36,9 @@ EOF
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 JAVA_OUT_DIR="$ROOT_DIR/java"
-JAR_NAME="test.jar"
-MAIN_CLASS="Test"
+MAIN_CLASS="Main"
+JAR_NAME="${MAIN_CLASS}.jar"
+CUSTOM_MAIN_CLASS=""
 
 # Collect library jars (if any) under lib/
 LIB_DIR="$ROOT_DIR/lib"
@@ -95,7 +99,8 @@ compile() {
 
 build_jar() {
   compile
-  echo "Building $JAR_NAME (Main-Class: $MAIN_CLASS)..."
+  local class_for_jar="${CUSTOM_MAIN_CLASS:-$MAIN_CLASS}"
+  echo "Building $JAR_NAME (Main-Class: $class_for_jar)..."
   # create manifest on the fly and package
   # If there are lib jars, add a Class-Path entry so they can be found next to the jar
   if [ -n "$CLASSPATH_JARS" ]; then
@@ -106,31 +111,52 @@ build_jar() {
       base=$(basename "$j")
       classpath_entry="$classpath_entry lib/$base"
     done
-    printf "Class-Path:%s\nMain-Class: %s\n" "$classpath_entry" "$MAIN_CLASS" > "$JAVA_OUT_DIR/manifest.mf"
+    printf "Class-Path:%s\nMain-Class: %s\n" "$classpath_entry" "$class_for_jar" > "$JAVA_OUT_DIR/manifest.mf"
     jar --create --file "$ROOT_DIR/$JAR_NAME" --manifest "$JAVA_OUT_DIR/manifest.mf" -C "$JAVA_OUT_DIR" .
   else
-    jar --create --file "$ROOT_DIR/$JAR_NAME" --manifest <(printf "Main-Class: %s\n" "$MAIN_CLASS") -C "$JAVA_OUT_DIR" .
+    jar --create --file "$ROOT_DIR/$JAR_NAME" --manifest <(printf "Main-Class: %s\n" "$class_for_jar") -C "$JAVA_OUT_DIR" .
   fi
   echo "Created $JAR_NAME"
 }
 
 run_main() {
-  echo "Running $MAIN_CLASS..."
+  local class_to_run="${CUSTOM_MAIN_CLASS:-$MAIN_CLASS}"
+  echo "Running $class_to_run..."
   if [ -n "$CLASSPATH_JARS" ]; then
-    java -cp "$JAVA_OUT_DIR:$CLASSPATH_JARS" "$MAIN_CLASS"
+    java -cp "$JAVA_OUT_DIR:$CLASSPATH_JARS" "$class_to_run"
   else
-    java -cp "$JAVA_OUT_DIR" "$MAIN_CLASS"
+    java -cp "$JAVA_OUT_DIR" "$class_to_run"
   fi
 }
 
 clean() {
   echo "Cleaning compiled classes and $JAR_NAME..."
   rm -rf "$JAVA_OUT_DIR"
-  rm -f "$ROOT_DIR/$JAR_NAME"
   echo "Clean complete."
 }
 
-case "${1-}" in
+# Parse options
+CMD="${1-}"
+shift || true
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n)
+      if [ $# -lt 2 ]; then
+        echo "Error: -n requires a class name argument"
+        exit 1
+      fi
+      CUSTOM_MAIN_CLASS="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+case "$CMD" in
   help|-h|--help)
     usage
     ;;
@@ -147,7 +173,7 @@ case "${1-}" in
   clean)
     clean
     ;;
-  "" )
+  ""|"compile")
     compile
     ;;
   *)
