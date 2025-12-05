@@ -5,6 +5,9 @@ import java.net.Socket;
 import common.Request;
 import server.connection.ClientHandler;
 
+/**
+ * Abstract class for handling database client connections.
+ */
 public abstract class DatabaseClientHandler extends ClientHandler {
 
     protected final Socket clientSocket;
@@ -17,6 +20,14 @@ public abstract class DatabaseClientHandler extends ClientHandler {
 
         this.clientSocket = clientSocket;
         this.databaseEngine = databaseEngine;
+    }
+
+    /**
+     * Get the DatabaseEngine instance.
+     * @return the DatabaseEngine
+     */
+    protected DatabaseEngine getDatabaseEngine() {
+        return databaseEngine;
     }
 
     /**

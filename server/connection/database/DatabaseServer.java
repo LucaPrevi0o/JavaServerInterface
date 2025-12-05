@@ -2,6 +2,11 @@ package server.connection.database;
 
 import server.connection.ConnectionServer;
 
+/**
+ * Abstract class representing a database server.
+ * Extends ConnectionServer to handle database client connections.
+ * @param <T> the type of DatabaseClientHandler
+ */
 public abstract class DatabaseServer<T extends DatabaseClientHandler> extends ConnectionServer<T> {
 
     private DatabaseEngine databaseEngine;

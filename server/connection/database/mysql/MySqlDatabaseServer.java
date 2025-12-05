@@ -9,10 +9,7 @@ import common.Response;
 
 public class MySqlDatabaseServer extends DatabaseServer<MySqlDatabaseClientHandler> {
 
-    public MySqlDatabaseServer(int port, DatabaseEngine databaseEngine) {
-        super(port, databaseEngine);
-        //TODO Auto-generated constructor stub
-    }
+    public MySqlDatabaseServer(int port, DatabaseEngine databaseEngine) { super(port, databaseEngine); }
 
     protected MySqlDatabaseClientHandler createClientHandler(Socket clientSocket) {
         return new MySqlDatabaseClientHandler(clientSocket, this.getDatabaseEngine());
@@ -20,7 +17,7 @@ public class MySqlDatabaseServer extends DatabaseServer<MySqlDatabaseClientHandl
 
     @Override
     protected Response serveFile(String filePath, String contentType) {
-        // Database servers don't serve files
+        
         QueryResult result = new QueryResult();
         result.setSuccess(false);
         result.setMessage("Database server does not support file serving");

@@ -17,17 +17,11 @@ public class MySqlQuery extends Query {
     private String whereClause;
     
     // Getters and setters
-    public QueryType getQueryType() {
-        return queryType;
-    }
+    public QueryType getQueryType() { return queryType; }
     
-    public void setQueryType(QueryType queryType) {
-        this.queryType = queryType;
-    }
+    public void setQueryType(QueryType queryType) { this.queryType = queryType; }
     
-    public String getRawSql() {
-        return rawSql;
-    }
+    public String getRawSql() { return rawSql; }
     
     public void setRawSql(String rawSql) {
         this.rawSql = rawSql;

@@ -1,5 +1,9 @@
 package server.connection.database;
 
+/**
+ * Interface representing a database engine.
+ * Defines methods for executing queries and managing transactions.
+ */
 public interface DatabaseEngine {
 
     /**
