@@ -4,8 +4,10 @@ import server.connection.database.DatabaseEngine;
 import server.connection.database.Query;
 import server.connection.database.QueryResult;
 import server.connection.database.Schema;
+import server.connection.database.StorageEngine;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.nio.charset.StandardCharsets;
 
 public class MySqlDatabaseEngine implements DatabaseEngine {
 
@@ -13,14 +15,33 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
     private final Map<String, List<Map<String, Object>>> tables;
     // Schema information: table -> columns
     private final Map<String, Set<String>> tableSchemas;
+    // Storage engine for persistence
+    private final StorageEngine storageEngine;
     // Transaction state
     private boolean inTransaction = false;
     private Map<String, List<Map<String, Object>>> transactionSnapshot;
     private Map<String, Set<String>> schemaSnapshot;
 
+    /**
+     * Creates a MySqlDatabaseEngine without persistence (in-memory only).
+     */
     public MySqlDatabaseEngine() {
+        this(null);
+    }
+
+    /**
+     * Creates a MySqlDatabaseEngine with optional persistence.
+     * @param storageEngine the storage engine for persistence, or null for in-memory only
+     */
+    public MySqlDatabaseEngine(StorageEngine storageEngine) {
         this.tables = new ConcurrentHashMap<>();
         this.tableSchemas = new ConcurrentHashMap<>();
+        this.storageEngine = storageEngine;
+        
+        // Load existing data from storage if available
+        if (storageEngine != null) {
+            loadFromStorage();
+        }
     }
 
     @Override
@@ -98,6 +119,10 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         }
 
         tables.get(tableName).add(newRow);
+        
+        // Persist to storage
+        saveTableToStorage(tableName);
+        
         return createSuccessResult("INSERT successful. 1 row affected.", null);
     }
 
@@ -116,6 +141,11 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
             affectedRows++;
         }
 
+        // Persist to storage
+        if (affectedRows > 0) {
+            saveTableToStorage(tableName);
+        }
+        
         return createSuccessResult("UPDATE successful. " + affectedRows + " row(s) affected.", null);
     }
 
@@ -131,6 +161,12 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         else rows.clear();
 
         int affectedRows = originalSize - rows.size();
+        
+        // Persist to storage
+        if (affectedRows > 0) {
+            saveTableToStorage(tableName);
+        }
+        
         return createSuccessResult("DELETE successful. " + affectedRows + " row(s) affected.", null);
     }
 
@@ -145,6 +181,10 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
             new HashSet<>(query.getColumns()) : new HashSet<>();
         tableSchemas.put(tableName, columns);
 
+        // Persist to storage
+        saveTableToStorage(tableName);
+        saveSchemaToStorage();
+
         return createSuccessResult("Table '" + tableName + "' created successfully.", null);
     }
 
@@ -156,6 +196,12 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
 
         tables.remove(tableName);
         tableSchemas.remove(tableName);
+
+        // Remove from storage
+        if (storageEngine != null) {
+            storageEngine.delete("table_" + tableName);
+        }
+        saveSchemaToStorage();
 
         return createSuccessResult("Table '" + tableName + "' dropped successfully.", null);
     }
@@ -247,10 +293,199 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
     }
 
     private QueryResult createErrorResult(String errorMessage) {
-        
+
         QueryResult result = new QueryResult();
         result.setSuccess(false);
         result.setMessage(errorMessage);
         return result;
+    }
+
+    /**
+     * Loads all tables and schema from storage.
+     */
+    private void loadFromStorage() {
+        if (storageEngine == null) return;
+
+        try {
+            // Load schema
+            byte[] schemaData = storageEngine.read("_schema");
+            if (schemaData != null) {
+                String schemaJson = new String(schemaData, StandardCharsets.UTF_8);
+                parseSchemaFromJson(schemaJson);
+            }
+
+            // Load each table
+            for (String tableName : tableSchemas.keySet()) {
+                loadTableFromStorage(tableName);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading from storage: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Loads a specific table from storage.
+     */
+    private void loadTableFromStorage(String tableName) {
+        if (storageEngine == null) return;
+
+        try {
+            byte[] tableData = storageEngine.read("table_" + tableName);
+            if (tableData != null) {
+                String tableJson = new String(tableData, StandardCharsets.UTF_8);
+                List<Map<String, Object>> rows = parseTableFromJson(tableJson);
+                tables.put(tableName, rows);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading table '" + tableName + "': " + e.getMessage());
+        }
+    }
+
+    /**
+     * Saves a specific table to storage.
+     */
+    private void saveTableToStorage(String tableName) {
+        if (storageEngine == null) return;
+
+        try {
+            List<Map<String, Object>> rows = tables.get(tableName);
+            String tableJson = serializeTableToJson(tableName, rows);
+            storageEngine.write("table_" + tableName, tableJson.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            System.err.println("Error saving table '" + tableName + "': " + e.getMessage());
+        }
+    }
+
+    /**
+     * Saves the schema to storage.
+     */
+    private void saveSchemaToStorage() {
+        if (storageEngine == null) return;
+
+        try {
+            String schemaJson = serializeSchemaToJson();
+            storageEngine.write("_schema", schemaJson.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            System.err.println("Error saving schema: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Serializes a table to JSON format.
+     */
+    private String serializeTableToJson(String tableName, List<Map<String, Object>> rows) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"tableName\":\"").append(tableName).append("\",\"rows\":[");
+        
+        for (int i = 0; i < rows.size(); i++) {
+            if (i > 0) json.append(",");
+            json.append("{");
+            
+            Map<String, Object> row = rows.get(i);
+            int colIndex = 0;
+            for (Map.Entry<String, Object> entry : row.entrySet()) {
+                if (colIndex > 0) json.append(",");
+                json.append("\"").append(entry.getKey()).append("\":\"");
+                json.append(entry.getValue() != null ? entry.getValue().toString() : "");
+                json.append("\"");
+                colIndex++;
+            }
+            
+            json.append("}");
+        }
+        
+        json.append("]}");
+        return json.toString();
+    }
+
+    /**
+     * Serializes the schema to JSON format.
+     */
+    private String serializeSchemaToJson() {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"tables\":{");
+        
+        int tableIndex = 0;
+        for (Map.Entry<String, Set<String>> entry : tableSchemas.entrySet()) {
+            if (tableIndex > 0) json.append(",");
+            json.append("\"").append(entry.getKey()).append("\":[\"")
+                .append(String.join("\",\"", entry.getValue()))
+                .append("\"]");
+            tableIndex++;
+        }
+        
+        json.append("}}");
+        return json.toString();
+    }
+
+    /**
+     * Parses table data from JSON.
+     */
+    private List<Map<String, Object>> parseTableFromJson(String json) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        
+        // Simple JSON parsing (rows array)
+        int rowsStart = json.indexOf("\"rows\":[") + 8;
+        int rowsEnd = json.lastIndexOf("]");
+        
+        if (rowsStart < 8 || rowsEnd <= rowsStart) return rows;
+        
+        String rowsJson = json.substring(rowsStart, rowsEnd);
+        String[] rowArray = rowsJson.split("\\},\\{");
+        
+        for (String rowStr : rowArray) {
+            rowStr = rowStr.replace("{", "").replace("}", "");
+            if (rowStr.trim().isEmpty()) continue;
+            
+            Map<String, Object> row = new HashMap<>();
+            String[] fields = rowStr.split(",(?=\")");
+            
+            for (String field : fields) {
+                int colonIndex = field.indexOf(":");
+                if (colonIndex > 0) {
+                    String key = field.substring(0, colonIndex).replace("\"", "").trim();
+                    String value = field.substring(colonIndex + 1).replace("\"", "").trim();
+                    row.put(key, value);
+                }
+            }
+            
+            if (!row.isEmpty()) {
+                rows.add(row);
+            }
+        }
+        
+        return rows;
+    }
+
+    /**
+     * Parses schema from JSON.
+     */
+    private void parseSchemaFromJson(String json) {
+        // Simple JSON parsing (tables object)
+        int tablesStart = json.indexOf("{\"tables\":{") + 11;
+        int tablesEnd = json.lastIndexOf("}");
+        
+        if (tablesStart < 11 || tablesEnd <= tablesStart) return;
+        
+        String tablesJson = json.substring(tablesStart, tablesEnd);
+        String[] tableArray = tablesJson.split(",(?=\")");
+        
+        for (String tableStr : tableArray) {
+            int colonIndex = tableStr.indexOf(":");
+            if (colonIndex > 0) {
+                String tableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
+                String columnsStr = tableStr.substring(colonIndex + 1)
+                    .replace("[", "").replace("]", "").replace("\"", "").trim();
+                
+                Set<String> columns = new HashSet<>();
+                if (!columnsStr.isEmpty()) {
+                    for (String col : columnsStr.split(",")) {
+                        columns.add(col.trim());
+                    }
+                }
+                
+                tableSchemas.put(tableName, columns);
+            }
+        }
     }
 }

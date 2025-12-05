@@ -10,15 +10,17 @@ import server.connection.ConnectionServer;
 public abstract class DatabaseServer<T extends DatabaseClientHandler> extends ConnectionServer<T> {
 
     private DatabaseEngine databaseEngine;
+    private StorageEngine storageEngine;
 
     /**
      * Constructor for DatabaseServer.
      * @param port the port number
      */
-    public DatabaseServer(int port, DatabaseEngine databaseEngine) {
+    public DatabaseServer(int port, DatabaseEngine databaseEngine, StorageEngine storageEngine) {
 
         super(port);
         this.databaseEngine = databaseEngine;
+        this.storageEngine = storageEngine;
     }
 
     /**
@@ -26,4 +28,10 @@ public abstract class DatabaseServer<T extends DatabaseClientHandler> extends Co
      * @return the DatabaseEngine
      */
     public DatabaseEngine getDatabaseEngine() { return databaseEngine; }
+
+    /**
+     * Get the StorageEngine instance.
+     * @return the StorageEngine
+     */   
+    public StorageEngine getStorageEngine() { return storageEngine; }
 }
