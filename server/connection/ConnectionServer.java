@@ -1,6 +1,5 @@
 package server.connection;
 
-import common.Response;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -77,14 +76,4 @@ public abstract class ConnectionServer<T extends ClientHandler> extends server.S
         Path path = Paths.get(filePath);
         return Files.readString(path, StandardCharsets.UTF_8);
     }
-
-    /**
-     * Read a file from the filesystem and create a protocol-specific response.
-     * Subclasses must implement this to create appropriate responses for their protocol.
-     * 
-     * @param filePath the path to the file (relative or absolute)
-     * @param contentType the MIME type of the file
-     * @return the protocol-specific response
-     */
-    protected abstract Response serveFile(String filePath, String contentType);
 }

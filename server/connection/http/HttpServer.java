@@ -120,7 +120,6 @@ public abstract class HttpServer extends ConnectionServer<HttpClientHandler> {
      * @param contentType the MIME type of the file
      * @return HTTP response with the file content or 500 error if file cannot be read
      */
-    @Override
     protected HttpResponse serveFile(String filePath, String contentType) {
 
         try {
