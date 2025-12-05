@@ -1,8 +1,6 @@
 package server;
 
 public abstract class Server {
-
-    private final int port;
     
     /**
      * Start the server.
@@ -13,18 +11,6 @@ public abstract class Server {
      * Stop the server.
      */
     public abstract void stop();
-
-    /**
-     * Get the port number on which the server is listening.
-     * @return the port number
-     */
-    public int getPort() { return port; }
-
-    /**
-     * Constructor for Server.
-     * @param port the port number
-     */
-    public Server(int port) { this.port = port; }
 
     /**
      * Hook method called before the server starts.

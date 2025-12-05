@@ -16,6 +16,8 @@ import java.nio.charset.StandardCharsets;
  */
 public abstract class ConnectionServer<T extends ClientHandler> extends server.Server {
 
+    private final int port;
+
     /**
      * Start the server to listen for incoming connections.
      */
@@ -24,9 +26,9 @@ public abstract class ConnectionServer<T extends ClientHandler> extends server.S
         System.out.println("Server is starting...");
         onBeforeStart();
 
-        try (var socket = new ServerSocket(getPort())) {
+        try (var socket = new ServerSocket(port)) {
 
-            System.out.println("Server started on port " + getPort());
+            System.out.println("Server started on port " + port);
             onServerStarted();
             while (true) {
 
@@ -61,7 +63,7 @@ public abstract class ConnectionServer<T extends ClientHandler> extends server.S
      * Constructor for Server.
      * @param port The port number on which the server will listen.
      */
-    public ConnectionServer(int port) { super(port); }
+    public ConnectionServer(int port) { this.port = port; }
 
     /**
      * Read a file from the filesystem and return its content.
