@@ -2,13 +2,15 @@ package server.connection.database.json;
 
 import server.connection.database.StorageEngine;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * JSON-based storage engine that persists data to the filesystem.
- * Each key corresponds to a separate JSON file in the storage directory.
+ * Handles serialization, caching, and file I/O.
  * Thread-safe with read-write locks for concurrent access.
  */
 public class JsonStorageEngine implements StorageEngine {
@@ -179,5 +181,214 @@ public class JsonStorageEngine implements StorageEngine {
         // Sanitize key to prevent directory traversal
         String sanitizedKey = key.replaceAll("[^a-zA-Z0-9_-]", "_");
         return storageDirectory.resolve(sanitizedKey + ".json");
+    }
+
+    // High-level database operations
+
+    @Override
+    public Set<String> loadTableNames() {
+        lock.readLock().lock();
+        try {
+            byte[] schemaData = read("_schema");
+            if (schemaData == null) return new HashSet<>();
+            
+            String json = new String(schemaData, StandardCharsets.UTF_8);
+            return parseTableNamesFromJson(json);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Set<String> loadTableSchema(String tableName) {
+        lock.readLock().lock();
+        try {
+            byte[] schemaData = read("_schema");
+            if (schemaData == null) return new HashSet<>();
+            
+            String json = new String(schemaData, StandardCharsets.UTF_8);
+            return parseTableSchemaFromJson(json, tableName);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> loadTable(String tableName) {
+        lock.readLock().lock();
+        try {
+            byte[] tableData = read("table_" + tableName);
+            if (tableData == null) return new ArrayList<>();
+            
+            String json = new String(tableData, StandardCharsets.UTF_8);
+            return parseTableDataFromJson(json);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void saveTable(String tableName, List<Map<String, Object>> rows) {
+        lock.writeLock().lock();
+        try {
+            String json = serializeTableToJson(tableName, rows);
+            write("table_" + tableName, json.getBytes(StandardCharsets.UTF_8));
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void saveSchemas(Map<String, Set<String>> schemas) {
+        lock.writeLock().lock();
+        try {
+            String json = serializeSchemasToJson(schemas);
+            write("_schema", json.getBytes(StandardCharsets.UTF_8));
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void deleteTable(String tableName) {
+        lock.writeLock().lock();
+        try {
+            delete("table_" + tableName);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    // JSON serialization/deserialization
+
+    private String serializeTableToJson(String tableName, List<Map<String, Object>> rows) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"tableName\":\"").append(tableName).append("\",\"rows\":[");
+        
+        for (int i = 0; i < rows.size(); i++) {
+            if (i > 0) json.append(",");
+            json.append("{");
+            
+            Map<String, Object> row = rows.get(i);
+            int colIndex = 0;
+            for (Map.Entry<String, Object> entry : row.entrySet()) {
+                if (colIndex > 0) json.append(",");
+                json.append("\"").append(entry.getKey()).append("\":\"");
+                json.append(entry.getValue() != null ? entry.getValue().toString() : "");
+                json.append("\"");
+                colIndex++;
+            }
+            
+            json.append("}");
+        }
+        
+        json.append("]}");
+        return json.toString();
+    }
+
+    private String serializeSchemasToJson(Map<String, Set<String>> schemas) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"tables\":{");
+        
+        int tableIndex = 0;
+        for (Map.Entry<String, Set<String>> entry : schemas.entrySet()) {
+            if (tableIndex > 0) json.append(",");
+            json.append("\"").append(entry.getKey()).append("\":[\"")
+                .append(String.join("\",\"", entry.getValue()))
+                .append("\"]");
+            tableIndex++;
+        }
+        
+        json.append("}}");
+        return json.toString();
+    }
+
+    private List<Map<String, Object>> parseTableDataFromJson(String json) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        
+        int rowsStart = json.indexOf("\"rows\":[") + 8;
+        int rowsEnd = json.lastIndexOf("]");
+        
+        if (rowsStart < 8 || rowsEnd <= rowsStart) return rows;
+        
+        String rowsJson = json.substring(rowsStart, rowsEnd);
+        String[] rowArray = rowsJson.split("\\},\\{");
+        
+        for (String rowStr : rowArray) {
+            rowStr = rowStr.replace("{", "").replace("}", "");
+            if (rowStr.trim().isEmpty()) continue;
+            
+            Map<String, Object> row = new HashMap<>();
+            String[] fields = rowStr.split(",(?=\")");
+            
+            for (String field : fields) {
+                int colonIndex = field.indexOf(":");
+                if (colonIndex > 0) {
+                    String key = field.substring(0, colonIndex).replace("\"", "").trim();
+                    String value = field.substring(colonIndex + 1).replace("\"", "").trim();
+                    row.put(key, value);
+                }
+            }
+            
+            if (!row.isEmpty()) {
+                rows.add(row);
+            }
+        }
+        
+        return rows;
+    }
+
+    private Set<String> parseTableNamesFromJson(String json) {
+        Set<String> tableNames = new HashSet<>();
+        
+        int tablesStart = json.indexOf("{\"tables\":{") + 11;
+        int tablesEnd = json.lastIndexOf("}");
+        
+        if (tablesStart < 11 || tablesEnd <= tablesStart) return tableNames;
+        
+        String tablesJson = json.substring(tablesStart, tablesEnd);
+        String[] tableArray = tablesJson.split(",(?=\")");
+        
+        for (String tableStr : tableArray) {
+            int colonIndex = tableStr.indexOf(":");
+            if (colonIndex > 0) {
+                String tableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
+                tableNames.add(tableName);
+            }
+        }
+        
+        return tableNames;
+    }
+
+    private Set<String> parseTableSchemaFromJson(String json, String tableName) {
+        Set<String> columns = new HashSet<>();
+        
+        int tablesStart = json.indexOf("{\"tables\":{") + 11;
+        int tablesEnd = json.lastIndexOf("}");
+        
+        if (tablesStart < 11 || tablesEnd <= tablesStart) return columns;
+        
+        String tablesJson = json.substring(tablesStart, tablesEnd);
+        String[] tableArray = tablesJson.split(",(?=\")");
+        
+        for (String tableStr : tableArray) {
+            int colonIndex = tableStr.indexOf(":");
+            if (colonIndex > 0) {
+                String currentTableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
+                if (currentTableName.equals(tableName)) {
+                    String columnsStr = tableStr.substring(colonIndex + 1)
+                        .replace("[", "").replace("]", "").replace("\"", "").trim();
+                    
+                    if (!columnsStr.isEmpty()) {
+                        for (String col : columnsStr.split(",")) {
+                            columns.add(col.trim());
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        return columns;
     }
 }
