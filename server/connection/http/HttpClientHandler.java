@@ -8,7 +8,6 @@ import common.http.response.HttpResponseHeader;
 import common.http.response.HttpResponseType;
 import common.response.ResponseHeader;
 import server.connection.ClientHandler;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -90,6 +89,9 @@ public class HttpClientHandler extends ClientHandler {
 
     /**
      * Extract the path from the request.
+
+/**
+ * Abstract server clas
      * @param request the HTTP request
      * @return the path (e.g., "/about")
      */

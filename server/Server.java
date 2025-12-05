@@ -1,5 +1,8 @@
 package server;
 
+import common.Request;
+import common.Response;
+
 public abstract class Server {
     
     /**
@@ -27,4 +30,6 @@ public abstract class Server {
      * after the server has started. It is empty by default.
      */
     protected void onServerStarted() {}
+
+    public abstract Response handleRequest(Request request);
 }
