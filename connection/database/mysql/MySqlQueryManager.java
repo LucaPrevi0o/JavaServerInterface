@@ -22,18 +22,17 @@ public class MySqlQueryManager {
 
         var query = new MySqlQuery();
         var sql = input.trim();
-        query.setRawSql(sql);
+        query.setRawQuery(sql);
 
         // Determine query type
         var queryType = determineQueryType(sql);
-        query.setQueryType(queryType);
-
+        query.setOperationType(queryType.getQueryCategory());
         // Parse based on query type
-        switch (queryType) {
-            case SELECT:
+        switch (queryType.getQueryCategory()) {
+            case READ:
                 parseSelect(sql, query);
                 break;
-            case INSERT:
+            case CREATE:
                 parseInsert(sql, query);
                 break;
             case UPDATE:
@@ -55,11 +54,11 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @return the QueryType enum value
      */
-    private static QueryType determineQueryType(String sql) {
+    private static MySqlQueryType determineQueryType(String sql) {
         
         var upperSql = sql.toUpperCase().trim();
         
-        for (var type : QueryType.values())
+        for (var type : MySqlQueryType.values())
             if (upperSql.startsWith(type.getSqlKeyword())) return type;
         
         throw new IllegalArgumentException("Unknown query type: " + sql);
@@ -75,8 +74,8 @@ public class MySqlQueryManager {
         // Extract table name
         var tablePattern = Pattern.compile("FROM\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
         var tableMatcher = tablePattern.matcher(sql);
-        if (tableMatcher.find()) query.setTableName(tableMatcher.group(1));
-
+        if (tableMatcher.find()) query.setTargetCollection(tableMatcher.group(1));
+        
         // Extract columns
         var colPattern = Pattern.compile("SELECT\\s+(.+?)\\s+FROM", Pattern.CASE_INSENSITIVE);
         var colMatcher = colPattern.matcher(sql);
@@ -87,7 +86,7 @@ public class MySqlQueryManager {
             if (colsStr.equals("*")) columns.add("*");
             else for (var col : colsStr.split(","))
                 columns.add(col.trim());
-            query.setColumns(columns);
+            query.setAffectedFields(columns);
         }
 
         // Extract WHERE clause
@@ -104,7 +103,7 @@ public class MySqlQueryManager {
         // Extract table name
         var tablePattern = Pattern.compile("INSERT\\s+INTO\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
         var tableMatcher = tablePattern.matcher(sql);
-        if (tableMatcher.find()) query.setTableName(tableMatcher.group(1));
+        if (tableMatcher.find()) query.setTargetCollection(tableMatcher.group(1));
 
         // Extract columns
         var colPattern = Pattern.compile("\\(([^)]+)\\)\\s*VALUES", Pattern.CASE_INSENSITIVE);
@@ -114,7 +113,7 @@ public class MySqlQueryManager {
             var colsStr = colMatcher.group(1).trim();
             var columns = new ArrayList<String>();
             for (var col : colsStr.split(",")) columns.add(col.trim());
-            query.setColumns(columns);
+            query.setAffectedFields(columns);
         }
 
         // Extract values
@@ -126,7 +125,7 @@ public class MySqlQueryManager {
             var valArray = valsStr.split(",");
             
             var values = new HashMap<String, Object>();
-            var columns = query.getColumns();
+            var columns = query.getAffectedFields();
             if (columns != null && columns.size() == valArray.length) for (var i = 0; i < columns.size(); i++) {
                     
                 var value = valArray[i].trim();
@@ -134,7 +133,7 @@ public class MySqlQueryManager {
                 if (value.startsWith("'") && value.endsWith("'")) value = value.substring(1, value.length() - 1);
                 values.put(columns.get(i), value);
             }
-            query.setValues(values);
+            query.setDataValues(values);
         }
     }
 
@@ -148,7 +147,7 @@ public class MySqlQueryManager {
         // Extract table name
         var tablePattern = Pattern.compile("UPDATE\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
         var tableMatcher = tablePattern.matcher(sql);
-        if (tableMatcher.find()) query.setTableName(tableMatcher.group(1));
+        if (tableMatcher.find()) query.setTargetCollection(tableMatcher.group(1));
 
         // Extract SET clause
         var setPattern = Pattern.compile("SET\\s+(.+?)(?:\\s+WHERE|$)", Pattern.CASE_INSENSITIVE);
@@ -169,7 +168,7 @@ public class MySqlQueryManager {
                     values.put(col, val);
                 }
             }
-            query.setValues(values);
+            query.setDataValues(values);
         }
 
         // Extract WHERE clause
@@ -186,14 +185,14 @@ public class MySqlQueryManager {
         // Extract table name
         var tablePattern = Pattern.compile("DELETE\\s+FROM\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
         var tableMatcher = tablePattern.matcher(sql);
-        if (tableMatcher.find()) query.setTableName(tableMatcher.group(1));
+        if (tableMatcher.find()) query.setTargetCollection(tableMatcher.group(1));
 
         // Extract WHERE clause
         extractWhereClause(sql, query);
     }
 
     /**
-     * Extract WHERE clause from any SQL statement.
+     * Extract WHERE clause from any SQL statement and parse it into a QueryCondition.
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
@@ -201,6 +200,11 @@ public class MySqlQueryManager {
 
         var wherePattern = Pattern.compile("WHERE\\s+(.+?)(?:;|$)", Pattern.CASE_INSENSITIVE);
         var whereMatcher = wherePattern.matcher(sql);
-        if (whereMatcher.find()) query.setWhereClause(whereMatcher.group(1).trim());
+        if (whereMatcher.find()) {
+
+            var whereClause = whereMatcher.group(1).trim();
+            var condition = MySqlQueryCondition.parse(whereClause);
+            query.setWhereCondition(condition);
+        }
     }
 }

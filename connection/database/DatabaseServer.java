@@ -54,7 +54,11 @@ public abstract class DatabaseServer extends ConnectionServer {
     @Override
     public QueryResult handleRequest(Request request) {
         
-        var query = parseRequest(request.toString());
-        return databaseEngine.execute(query);
+        if (request instanceof Query q) {
+
+            var query = parseRequest(q.getRawQuery());
+            return databaseEngine.execute(query);
+        }
+        return null;
     }
 }

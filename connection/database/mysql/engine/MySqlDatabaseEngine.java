@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jsi.connection.database.Query;
+import jsi.connection.database.QueryCondition;
 import jsi.connection.database.QueryResult;
 import jsi.connection.database.Schema;
 import jsi.connection.database.engine.DatabaseEngine;
@@ -49,14 +50,12 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         
         try {
 
-            return switch (mySqlQuery.getQueryType()) {
-                case SELECT -> executeSelect(mySqlQuery);
-                case INSERT -> executeInsert(mySqlQuery);
+            return switch (mySqlQuery.getOperationType()) {
+                case READ -> executeSelect(mySqlQuery);
+                case CREATE -> executeInsert(mySqlQuery);
                 case UPDATE -> executeUpdate(mySqlQuery);
                 case DELETE -> executeDelete(mySqlQuery);
-                case CREATE -> executeCreate(mySqlQuery);
-                case DROP -> executeDrop(mySqlQuery);
-                default -> createErrorResult("Unsupported query type: " + mySqlQuery.getQueryType());
+                default -> createErrorResult("Unsupported query type: " + mySqlQuery.getOperationType());
             };
         } catch (Exception e) { return createErrorResult("Query execution error: " + e.getMessage()); }
     }
@@ -68,28 +67,35 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      */
     private QueryResult executeSelect(MySqlQuery query) {
 
-        var tableName = query.getTableName();
+        var tableName = query.getTargetCollection();
         if (!tables.containsKey(tableName)) return createErrorResult("Table '" + tableName + "' does not exist");
 
         var rows = tables.get(tableName);
         var result = new ArrayList<Map<String, Object>>();
 
-        // Filter rows by WHERE clause
+        // Filter rows by WHERE condition
         for (var row : rows) {
 
-            if (query.getWhereClause() == null || evaluateWhereClause(row, query.getWhereClause())) {
+            if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
 
                 var selectedRow = new HashMap<String, Object>();
                 
                 // Select specific columns or all (*)
-                if (query.getColumns() != null && !query.getColumns().isEmpty()) for (String col : query.getColumns()) {
+                var affectedFields = query.getAffectedFields();
+                if (affectedFields != null && !affectedFields.isEmpty()) {
+                    for (String col : affectedFields) {
 
-                    if (col.equals("*")) {
-
-                        selectedRow.putAll(row);
-                        break;
-                    } else if (row.containsKey(col)) selectedRow.put(col, row.get(col));
-                } else selectedRow.putAll(row);
+                        if (col.equals("*")) {
+                            selectedRow.putAll(row);
+                            break;
+                        } else if (row.containsKey(col)) {
+                            selectedRow.put(col, row.get(col));
+                        }
+                    }
+                } else {
+                    selectedRow.putAll(row);
+                }
+                
                 result.add(selectedRow);
             }
         }
@@ -104,23 +110,21 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      */
     private QueryResult executeInsert(MySqlQuery query) {
 
-        var tableName = query.getTableName();
+        var tableName = query.getTargetCollection();
         
         // Create table if it doesn't exist
         if (!tables.containsKey(tableName)) {
-
             tables.put(tableName, new ArrayList<>());
             tableSchemas.put(tableName, new HashSet<>());
         }
 
         var newRow = new HashMap<String, Object>();
-        var columns = query.getColumns();
-        var values = query.getValues();
+        var dataValues = query.getDataValues();
 
-        if (columns != null && values != null) for (String col : columns) {
-
-            newRow.put(col, values.get(col));
-            tableSchemas.get(tableName).add(col);
+        if (dataValues != null) {
+            newRow.putAll(dataValues);
+            // Update schema with new columns
+            tableSchemas.get(tableName).addAll(dataValues.keySet());
         }
 
         tables.get(tableName).add(newRow);
@@ -138,17 +142,20 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      */
     private QueryResult executeUpdate(MySqlQuery query) {
 
-        var tableName = query.getTableName();
+        var tableName = query.getTargetCollection();
         if (!tables.containsKey(tableName)) return createErrorResult("Table '" + tableName + "' does not exist");
 
         var rows = tables.get(tableName);
-        var updates = query.getValues();
+        var updates = query.getDataValues();
         int affectedRows = 0;
 
-        for (var row : rows) if (query.getWhereClause() == null || evaluateWhereClause(row, query.getWhereClause())) {
-
-            row.putAll(updates);
-            affectedRows++;
+        if (updates != null) {
+            for (var row : rows) {
+                if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
+                    row.putAll(updates);
+                    affectedRows++;
+                }
+            }
         }
 
         // Persist to storage
@@ -163,14 +170,17 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      */
     private QueryResult executeDelete(MySqlQuery query) {
 
-        var tableName = query.getTableName();
+        var tableName = query.getTargetCollection();
         if (!tables.containsKey(tableName)) return createErrorResult("Table '" + tableName + "' does not exist");
 
         var rows = tables.get(tableName);
         var originalSize = rows.size();
 
-        if (query.getWhereClause() != null) rows.removeIf(row -> evaluateWhereClause(row, query.getWhereClause()));
-        else rows.clear();
+        if (query.getWhereCondition() != null) {
+            rows.removeIf(row -> evaluateCondition(row, query.getWhereCondition()));
+        } else {
+            rows.clear();
+        }
 
         var affectedRows = originalSize - rows.size();
         
@@ -180,68 +190,121 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
     }
 
     /**
-     * Executes a CREATE query.
-     * @param query the MySqlQuery object
-     * @return the QueryResult object
+     * Evaluates a QueryCondition against a row.
+     * Supports both simple and complex conditions.
+     * 
+     * @param row the row to evaluate
+     * @param condition the QueryCondition to evaluate
+     * @return true if the condition is satisfied, false otherwise
      */
-    private QueryResult executeCreate(MySqlQuery query) {
+    private boolean evaluateCondition(Map<String, Object> row, QueryCondition condition) {
 
-        var tableName = query.getTableName();
+        if (condition == null) return true;
         
-        if (tables.containsKey(tableName))return createErrorResult("Table '" + tableName + "' already exists");
-
-        tables.put(tableName, new ArrayList<>());
-        var columns = query.getColumns() != null ? new HashSet<String>(query.getColumns()) : new HashSet<String>();
-        tableSchemas.put(tableName, columns);
-
-        // Persist to storage
-        saveTableToStorage(tableName);
-        saveSchemaToStorage();
-
-        return createSuccessResult("Table '" + tableName + "' created successfully.", null);
-    }
-
-    /**
-     * Executes a DROP query.
-     * @param query the MySqlQuery object
-     * @return the QueryResult object
-     */
-    private QueryResult executeDrop(MySqlQuery query) {
-
-        var tableName = query.getTableName();
-        
-        if (!tables.containsKey(tableName)) return createErrorResult("Table '" + tableName + "' does not exist");
-
-        tables.remove(tableName);
-        tableSchemas.remove(tableName);
-
-        // Remove from storage
-        if (storageEngine != null) storageEngine.deleteTable(tableName);
-        saveSchemaToStorage();
-
-        return createSuccessResult("Table '" + tableName + "' dropped successfully.", null);
-    }
-
-    /**
-     * Simple WHERE clause evaluation.
-     * Supports: column = value, column > value, column < value
-     */
-    private boolean evaluateWhereClause(Map<String, Object> row, String whereClause) {
-
-        // Simple implementation for basic comparisons
-        if (whereClause.contains("=")) {
-
-            var parts = whereClause.split("=");
-            if (parts.length == 2) {
-
-                var column = parts[0].trim();
-                var value = parts[1].trim().replace("'", "").replace("\"", "");
-                var rowValue = row.get(column);
-                return rowValue != null && rowValue.toString().equals(value);
-            }
+        // Handle simple conditions
+        if (condition.isSimpleCondition()) {
+            return evaluateSimpleCondition(row, condition);
         }
-        // Add more operators as needed (>, <, !=, LIKE, etc.)
+        
+        // Handle complex conditions (AND/OR/NOT)
+        if (condition.isComplexCondition()) {
+            var logicalOp = condition.getLogicalOperator();
+            var subConditions = condition.getSubConditions();
+            
+            return switch (logicalOp) {
+                case AND -> {
+                    for (var subCondition : subConditions) {
+                        if (!evaluateCondition(row, subCondition)) {
+                            yield false;
+                        }
+                    }
+                    yield true;
+                }
+                case OR -> {
+                    for (var subCondition : subConditions) {
+                        if (evaluateCondition(row, subCondition)) {
+                            yield true;
+                        }
+                    }
+                    yield false;
+                }
+                case NOT -> {
+                    if (!subConditions.isEmpty()) {
+                        yield !evaluateCondition(row, subConditions.get(0));
+                    }
+                    yield true;
+                }
+            };
+        }
+        
         return true;
+    }
+
+    /**
+     * Evaluates a simple condition against a row.
+     * 
+     * @param row the row to evaluate
+     * @param condition the simple QueryCondition
+     * @return true if the condition is satisfied, false otherwise
+     */
+    private boolean evaluateSimpleCondition(Map<String, Object> row, QueryCondition condition) {
+
+        var fieldName = condition.getFieldName();
+        var operator = condition.getComparisonOperator();
+        var conditionValue = condition.getValue();
+        var rowValue = row.get(fieldName);
+
+        return switch (operator) {
+            case EQUALS -> Objects.equals(rowValue, conditionValue);
+            case NOT_EQUALS -> !Objects.equals(rowValue, conditionValue);
+            case GREATER_THAN -> compareValues(rowValue, conditionValue) > 0;
+            case LESS_THAN -> compareValues(rowValue, conditionValue) < 0;
+            case GREATER_THAN_OR_EQUAL -> compareValues(rowValue, conditionValue) >= 0;
+            case LESS_THAN_OR_EQUAL -> compareValues(rowValue, conditionValue) <= 0;
+            case LIKE -> {
+                if (rowValue == null || conditionValue == null) yield false;
+                var pattern = conditionValue.toString()
+                    .replace("%", ".*")
+                    .replace("_", ".");
+                yield rowValue.toString().matches(pattern);
+            }
+            case IN -> {
+                if (conditionValue instanceof Object[]) {
+                    var values = (Object[]) conditionValue;
+                    for (var value : values) {
+                        if (Objects.equals(rowValue, value)) {
+                            yield true;
+                        }
+                    }
+                }
+                yield false;
+            }
+            case IS_NULL -> rowValue == null;
+            case IS_NOT_NULL -> rowValue != null;
+        };
+    }
+
+    /**
+     * Compares two values numerically.
+     * Returns negative if v1 < v2, zero if equal, positive if v1 > v2.
+     */
+    private int compareValues(Object v1, Object v2) {
+
+        if (v1 == null || v2 == null) return 0;
+        
+        // Try numeric comparison
+        try {
+            if (v1 instanceof Number && v2 instanceof Number) {
+                double d1 = ((Number) v1).doubleValue();
+                double d2 = ((Number) v2).doubleValue();
+                return Double.compare(d1, d2);
+            }
+        } catch (Exception e) {
+            // Fall through to string comparison
+        }
+        
+        // Fall back to string comparison
+        return v1.toString().compareTo(v2.toString());
     }
 
     /**
