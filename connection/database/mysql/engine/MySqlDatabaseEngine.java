@@ -18,13 +18,9 @@ import jsi.connection.database.storage.StorageEngine;
  */
 public class MySqlDatabaseEngine implements DatabaseEngine {
 
-    // In-memory storage: table -> rows
     private final Map<String, List<Map<String, Object>>> tables;
-    // Schema information: table -> columns
     private final Map<String, Set<String>> tableSchemas;
-    // Storage engine for persistence
     private final StorageEngine storageEngine;
-    // Transaction state
     private boolean inTransaction = false;
     private Map<String, List<Map<String, Object>>> transactionSnapshot;
     private Map<String, Set<String>> schemaSnapshot;
@@ -42,6 +38,11 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         loadFromStorage();
     }
 
+    /**
+     * Executes a query and returns the result.
+     * @param query the Query to execute
+     * @return the QueryResult from execution
+     */
     @Override
     public QueryResult execute(Query query) {
 
@@ -82,20 +83,16 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
                 
                 // Select specific columns or all (*)
                 var affectedFields = query.getAffectedFields();
-                if (affectedFields != null && !affectedFields.isEmpty()) {
-                    for (String col : affectedFields) {
+                if (affectedFields != null && !affectedFields.isEmpty())
+                    for (var col : affectedFields) {
 
                         if (col.equals("*")) {
+
                             selectedRow.putAll(row);
                             break;
-                        } else if (row.containsKey(col)) {
-                            selectedRow.put(col, row.get(col));
-                        }
+                        } else if (row.containsKey(col)) selectedRow.put(col, row.get(col));
                     }
-                } else {
-                    selectedRow.putAll(row);
-                }
-                
+                else selectedRow.putAll(row);
                 result.add(selectedRow);
             }
         }
@@ -111,10 +108,11 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
     private QueryResult executeInsert(MySqlQuery query) {
 
         var tableName = query.getTargetCollection();
-        boolean isNewTable = false;
+        var isNewTable = false;
         
         // Create table if it doesn't exist
         if (!tables.containsKey(tableName)) {
+
             tables.put(tableName, new ArrayList<>());
             tableSchemas.put(tableName, new HashSet<>());
             isNewTable = true;
@@ -124,6 +122,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         var dataValues = query.getDataValues();
 
         if (dataValues != null) {
+
             newRow.putAll(dataValues);
             // Update schema with new columns
             tableSchemas.get(tableName).addAll(dataValues.keySet());
@@ -135,10 +134,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         saveTableToStorage(tableName);
         
         // Save schema if table was created or columns were added
-        if (isNewTable || (dataValues != null && !dataValues.isEmpty())) {
-            saveSchemaToStorage();
-        }
-        
+        if (isNewTable || (dataValues != null && !dataValues.isEmpty())) saveSchemaToStorage();
         return createSuccessResult("INSERT successful. 1 row affected.", null);
     }
 
@@ -154,24 +150,23 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
 
         var rows = tables.get(tableName);
         var updates = query.getDataValues();
-        int affectedRows = 0;
-        boolean schemaChanged = false;
+        var affectedRows = 0;
+        var schemaChanged = false;
 
         if (updates != null) {
+
             // Check if we're adding new columns
-            Set<String> currentSchema = tableSchemas.get(tableName);
-            for (String key : updates.keySet()) {
-                if (!currentSchema.contains(key)) {
-                    currentSchema.add(key);
-                    schemaChanged = true;
-                }
+            var currentSchema = tableSchemas.get(tableName);
+            for (var key : updates.keySet()) if (!currentSchema.contains(key)) {
+
+                currentSchema.add(key);
+                schemaChanged = true;
             }
             
-            for (var row : rows) {
-                if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
-                    row.putAll(updates);
-                    affectedRows++;
-                }
+            for (var row : rows) if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
+
+                row.putAll(updates);
+                affectedRows++;
             }
         }
 
@@ -195,11 +190,8 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         var rows = tables.get(tableName);
         var originalSize = rows.size();
 
-        if (query.getWhereCondition() != null) {
-            rows.removeIf(row -> evaluateCondition(row, query.getWhereCondition()));
-        } else {
-            rows.clear();
-        }
+        if (query.getWhereCondition() != null) rows.removeIf(row -> evaluateCondition(row, query.getWhereCondition()));
+        else rows.clear();
 
         var affectedRows = originalSize - rows.size();
         
@@ -221,36 +213,28 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         if (condition == null) return true;
         
         // Handle simple conditions
-        if (condition.isSimpleCondition()) {
-            return evaluateSimpleCondition(row, condition);
-        }
+        if (condition.isSimpleCondition()) return evaluateSimpleCondition(row, condition);
         
         // Handle complex conditions (AND/OR/NOT)
         if (condition.isComplexCondition()) {
+
             var logicalOp = condition.getLogicalOperator();
             var subConditions = condition.getSubConditions();
             
             return switch (logicalOp) {
+
                 case AND -> {
-                    for (var subCondition : subConditions) {
-                        if (!evaluateCondition(row, subCondition)) {
-                            yield false;
-                        }
-                    }
+                    for (var subCondition : subConditions)
+                        if (!evaluateCondition(row, subCondition)) yield false;
                     yield true;
                 }
                 case OR -> {
-                    for (var subCondition : subConditions) {
-                        if (evaluateCondition(row, subCondition)) {
-                            yield true;
-                        }
-                    }
+                    for (var subCondition : subConditions)
+                        if (evaluateCondition(row, subCondition)) yield true;
                     yield false;
                 }
                 case NOT -> {
-                    if (!subConditions.isEmpty()) {
-                        yield !evaluateCondition(row, subConditions.get(0));
-                    }
+                    if (!subConditions.isEmpty()) yield !evaluateCondition(row, subConditions.get(0));
                     yield true;
                 }
             };
@@ -274,6 +258,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         var rowValue = row.get(fieldName);
 
         return switch (operator) {
+
             case EQUALS -> Objects.equals(rowValue, conditionValue);
             case NOT_EQUALS -> !Objects.equals(rowValue, conditionValue);
             case GREATER_THAN -> compareValues(rowValue, conditionValue) > 0;
@@ -281,6 +266,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
             case GREATER_THAN_OR_EQUAL -> compareValues(rowValue, conditionValue) >= 0;
             case LESS_THAN_OR_EQUAL -> compareValues(rowValue, conditionValue) <= 0;
             case LIKE -> {
+
                 if (rowValue == null || conditionValue == null) yield false;
                 var pattern = conditionValue.toString()
                     .replace("%", ".*")
@@ -288,13 +274,12 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
                 yield rowValue.toString().matches(pattern);
             }
             case IN -> {
+
                 if (conditionValue instanceof Object[]) {
+
                     var values = (Object[]) conditionValue;
-                    for (var value : values) {
-                        if (Objects.equals(rowValue, value)) {
-                            yield true;
-                        }
-                    }
+                    for (var value : values)
+                        if (Objects.equals(rowValue, value)) yield true;
                 }
                 yield false;
             }
@@ -313,14 +298,13 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         
         // Try numeric comparison
         try {
+
             if (v1 instanceof Number && v2 instanceof Number) {
-                double d1 = ((Number) v1).doubleValue();
-                double d2 = ((Number) v2).doubleValue();
+                var d1 = ((Number) v1).doubleValue();
+                var d2 = ((Number) v2).doubleValue();
                 return Double.compare(d1, d2);
             }
-        } catch (Exception e) {
-            // Fall through to string comparison
-        }
+        } catch (Exception e) { /* Ignore and fall back */ }
         
         // Fall back to string comparison
         return v1.toString().compareTo(v2.toString());

@@ -1,5 +1,6 @@
 package jsi.connection.database.storage;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,21 +15,24 @@ public interface StorageEngine {
      * Writes raw byte data for low-level operations.
      * @param key the identifier
      * @param data the byte array to store
+     * @throws IOException if an I/O error occurs
      */
-    void write(String key, byte[] data);
+    void write(String key, byte[] data) throws IOException;
     
     /**
      * Reads raw byte data for low-level operations.
      * @param key the identifier
      * @return the byte array, or null if not found
+     * @throws IOException if an I/O error occurs
      */
-    byte[] read(String key);
+    byte[] read(String key) throws IOException;
     
     /**
      * Deletes data by key.
      * @param key the identifier to delete
+     * @throws IOException if an I/O error occurs
      */
-    void delete(String key);
+    void delete(String key) throws IOException;
     
     /**
      * Loads all table names from storage.

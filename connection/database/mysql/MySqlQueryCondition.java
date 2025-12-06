@@ -17,9 +17,7 @@ public class MySqlQueryCondition extends QueryCondition {
     /**
      * Creates an empty MySqlQueryCondition.
      */
-    public MySqlQueryCondition() {
-        super();
-    }
+    public MySqlQueryCondition() { super(); }
     
     /**
      * Creates a simple MySqlQueryCondition.
