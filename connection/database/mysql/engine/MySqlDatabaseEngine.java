@@ -111,11 +111,13 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
     private QueryResult executeInsert(MySqlQuery query) {
 
         var tableName = query.getTargetCollection();
+        boolean isNewTable = false;
         
         // Create table if it doesn't exist
         if (!tables.containsKey(tableName)) {
             tables.put(tableName, new ArrayList<>());
             tableSchemas.put(tableName, new HashSet<>());
+            isNewTable = true;
         }
 
         var newRow = new HashMap<String, Object>();
@@ -131,6 +133,11 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         
         // Persist to storage
         saveTableToStorage(tableName);
+        
+        // Save schema if table was created or columns were added
+        if (isNewTable || (dataValues != null && !dataValues.isEmpty())) {
+            saveSchemaToStorage();
+        }
         
         return createSuccessResult("INSERT successful. 1 row affected.", null);
     }
@@ -148,8 +155,18 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         var rows = tables.get(tableName);
         var updates = query.getDataValues();
         int affectedRows = 0;
+        boolean schemaChanged = false;
 
         if (updates != null) {
+            // Check if we're adding new columns
+            Set<String> currentSchema = tableSchemas.get(tableName);
+            for (String key : updates.keySet()) {
+                if (!currentSchema.contains(key)) {
+                    currentSchema.add(key);
+                    schemaChanged = true;
+                }
+            }
+            
             for (var row : rows) {
                 if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
                     row.putAll(updates);
@@ -160,6 +177,8 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
 
         // Persist to storage
         if (affectedRows > 0) saveTableToStorage(tableName);
+        if (schemaChanged) saveSchemaToStorage();
+        
         return createSuccessResult("UPDATE successful. " + affectedRows + " row(s) affected.", null);
     }
 
