@@ -1,3 +1,5 @@
+TODO - remake from scratch **a lot** of times during development
+
 # Java Server Interface
 
 A highly modular, protocol-agnostic framework for building custom server implementations in Java. From HTTP web servers to database engines, build anything that listens on a socket.
