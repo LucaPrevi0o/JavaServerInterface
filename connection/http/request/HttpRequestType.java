@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.request;
+package jsi.connection.http.request;
 
-import JavaServerInterface.request.RequestType;
+import jsi.request.RequestType;
 
 /**
  * Enumeration of HTTP request types.

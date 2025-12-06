@@ -1,4 +1,4 @@
-package JavaServerInterface.connection;
+package jsi.connection;
 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -9,8 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import JavaServerInterface.Request;
-import JavaServerInterface.Server;
+import jsi.Request;
+import jsi.Server;
 
 import java.nio.charset.StandardCharsets;
 

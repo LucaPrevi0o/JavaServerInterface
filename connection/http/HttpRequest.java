@@ -1,11 +1,11 @@
-package JavaServerInterface.connection.http;
+package jsi.connection.http;
 
 import java.util.ArrayList;
 
-import JavaServerInterface.Request;
-import JavaServerInterface.connection.http.request.HttpRequestHeader;
-import JavaServerInterface.connection.http.request.HttpRequestParameter;
-import JavaServerInterface.connection.http.request.HttpRequestType;
+import jsi.Request;
+import jsi.connection.http.request.HttpRequestHeader;
+import jsi.connection.http.request.HttpRequestParameter;
+import jsi.connection.http.request.HttpRequestType;
 
 /**
  * Class representing an HTTP request.

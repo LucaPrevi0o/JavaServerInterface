@@ -1,9 +1,9 @@
-package JavaServerInterface.connection.http;
+package jsi.connection.http;
 
-import JavaServerInterface.Response;
-import JavaServerInterface.response.ResponseBody;
-import JavaServerInterface.response.ResponseHeader;
-import JavaServerInterface.response.ResponseType;
+import jsi.Response;
+import jsi.response.ResponseBody;
+import jsi.response.ResponseHeader;
+import jsi.response.ResponseType;
 
 /**
  * Represents an HTTP response.

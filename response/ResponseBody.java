@@ -1,4 +1,4 @@
-package JavaServerInterface.response;
+package jsi.response;
 
 public interface ResponseBody {
     

@@ -1,4 +1,4 @@
-package JavaServerInterface.response;
+package jsi.response;
 
 /**
  * Interface representing a response header.

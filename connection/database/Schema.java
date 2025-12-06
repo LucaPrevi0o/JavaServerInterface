@@ -1,4 +1,4 @@
-package JavaServerInterface.connection.database;
+package jsi.connection.database;
 
 import java.util.Map;
 import java.util.Set;

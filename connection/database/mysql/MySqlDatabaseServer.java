@@ -1,8 +1,8 @@
-package JavaServerInterface.connection.database.mysql;
+package jsi.connection.database.mysql;
 
-import JavaServerInterface.connection.database.DatabaseServer;
-import JavaServerInterface.connection.database.engine.DatabaseEngine;
-import JavaServerInterface.connection.database.storage.StorageEngine;
+import jsi.connection.database.DatabaseServer;
+import jsi.connection.database.engine.DatabaseEngine;
+import jsi.connection.database.storage.StorageEngine;
 
 public class MySqlDatabaseServer extends DatabaseServer {
 

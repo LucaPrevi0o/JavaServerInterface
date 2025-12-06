@@ -1,4 +1,4 @@
-package JavaServerInterface.connection.database.json.storage;
+package jsi.connection.database.json.storage;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import JavaServerInterface.connection.database.storage.StorageEngine;
+import jsi.connection.database.storage.StorageEngine;
 
 /**
  * JSON-based storage engine that persists data to the filesystem.

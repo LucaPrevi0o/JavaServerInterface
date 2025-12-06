@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.response;
+package jsi.connection.http.response;
 
-import JavaServerInterface.response.ResponseHeader;
+import jsi.response.ResponseHeader;
 
 /**
  * Class representing an HTTP response header.

@@ -1,4 +1,4 @@
-package JavaServerInterface.connection.http.request;
+package jsi.connection.http.request;
 
 public class HttpRequestBuilder {
     

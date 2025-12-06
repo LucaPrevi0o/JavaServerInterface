@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.request;
+package jsi.connection.http.request;
 
-import JavaServerInterface.request.RequestParameter;
+import jsi.request.RequestParameter;
 
 /**
  * Class representing an HTTP request parameter.

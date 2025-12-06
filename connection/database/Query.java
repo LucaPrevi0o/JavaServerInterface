@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.database;
+package jsi.connection.database;
 
-import JavaServerInterface.Request;
+import jsi.Request;
 
 /**
  * Abstract class representing a database query.

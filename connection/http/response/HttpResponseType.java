@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.response;
+package jsi.connection.http.response;
 
-import JavaServerInterface.response.ResponseType;
+import jsi.response.ResponseType;
 
 /**
  * Enum representing HTTP response types.

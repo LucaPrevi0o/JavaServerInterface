@@ -1,14 +1,14 @@
-package JavaServerInterface.connection.http;
+package jsi.connection.http;
 
 import java.util.List;
 
-import JavaServerInterface.Request;
-import JavaServerInterface.Response;
-import JavaServerInterface.connection.ConnectionServer;
-import JavaServerInterface.connection.http.response.HttpResponseBody;
-import JavaServerInterface.connection.http.response.HttpResponseHeader;
-import JavaServerInterface.connection.http.response.HttpResponseType;
-import JavaServerInterface.response.ResponseHeader;
+import jsi.Request;
+import jsi.Response;
+import jsi.connection.ConnectionServer;
+import jsi.connection.http.response.HttpResponseBody;
+import jsi.connection.http.response.HttpResponseHeader;
+import jsi.connection.http.response.HttpResponseType;
+import jsi.response.ResponseHeader;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

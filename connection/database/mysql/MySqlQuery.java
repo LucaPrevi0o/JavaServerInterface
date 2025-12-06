@@ -1,9 +1,9 @@
-package JavaServerInterface.connection.database.mysql;
+package jsi.connection.database.mysql;
 
 import java.util.List;
 import java.util.Map;
 
-import JavaServerInterface.connection.database.Query;
+import jsi.connection.database.Query;
 
 public class MySqlQuery extends Query {
 

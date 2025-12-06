@@ -1,4 +1,4 @@
-package JavaServerInterface;
+package jsi;
 
 public class RoutedConnection {
     

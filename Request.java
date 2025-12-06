@@ -1,4 +1,4 @@
-package JavaServerInterface;
+package jsi;
 /**
  * Abstract class representing a generic request.
  */

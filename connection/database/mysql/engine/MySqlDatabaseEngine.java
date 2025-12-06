@@ -1,14 +1,14 @@
-package JavaServerInterface.connection.database.mysql.engine;
+package jsi.connection.database.mysql.engine;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import JavaServerInterface.connection.database.Query;
-import JavaServerInterface.connection.database.QueryResult;
-import JavaServerInterface.connection.database.Schema;
-import JavaServerInterface.connection.database.engine.DatabaseEngine;
-import JavaServerInterface.connection.database.mysql.MySqlQuery;
-import JavaServerInterface.connection.database.storage.StorageEngine;
+import jsi.connection.database.Query;
+import jsi.connection.database.QueryResult;
+import jsi.connection.database.Schema;
+import jsi.connection.database.engine.DatabaseEngine;
+import jsi.connection.database.mysql.MySqlQuery;
+import jsi.connection.database.storage.StorageEngine;
 
 /**
  * MySQL Database Engine implementation.

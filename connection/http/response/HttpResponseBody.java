@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.response;
+package jsi.connection.http.response;
 
-import JavaServerInterface.response.ResponseBody;
+import jsi.response.ResponseBody;
 
 /**
  * Represents the body of an HTTP response.

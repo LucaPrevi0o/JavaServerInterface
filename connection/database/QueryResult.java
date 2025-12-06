@@ -1,9 +1,9 @@
-package JavaServerInterface.connection.database;
+package jsi.connection.database;
 
 import java.util.List;
 import java.util.Map;
 
-import JavaServerInterface.Response;
+import jsi.Response;
 
 /**
  * Class representing the result of a database query.

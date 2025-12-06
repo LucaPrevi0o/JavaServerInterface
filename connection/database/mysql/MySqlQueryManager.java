@@ -1,4 +1,4 @@
-package JavaServerInterface.connection.database.mysql;
+package jsi.connection.database.mysql;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,8 +1,8 @@
-package JavaServerInterface.connection.database.engine;
+package jsi.connection.database.engine;
 
-import JavaServerInterface.connection.database.Query;
-import JavaServerInterface.connection.database.QueryResult;
-import JavaServerInterface.connection.database.Schema;
+import jsi.connection.database.Query;
+import jsi.connection.database.QueryResult;
+import jsi.connection.database.Schema;
 
 /**
  * Interface representing a database engine.

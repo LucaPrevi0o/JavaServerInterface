@@ -1,9 +1,9 @@
-package JavaServerInterface.connection.database;
+package jsi.connection.database;
 
-import JavaServerInterface.Request;
-import JavaServerInterface.connection.ConnectionServer;
-import JavaServerInterface.connection.database.engine.DatabaseEngine;
-import JavaServerInterface.connection.database.storage.StorageEngine;
+import jsi.Request;
+import jsi.connection.ConnectionServer;
+import jsi.connection.database.engine.DatabaseEngine;
+import jsi.connection.database.storage.StorageEngine;
 
 /**
  * Abstract class representing a database server.

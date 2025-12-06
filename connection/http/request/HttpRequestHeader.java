@@ -1,6 +1,6 @@
-package JavaServerInterface.connection.http.request;
+package jsi.connection.http.request;
 
-import JavaServerInterface.request.RequestHeader;
+import jsi.request.RequestHeader;
 
 /**
  * Class representing an HTTP request header.

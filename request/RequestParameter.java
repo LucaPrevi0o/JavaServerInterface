@@ -1,4 +1,4 @@
-package JavaServerInterface.request;
+package jsi.request;
 
 public interface RequestParameter {
     
