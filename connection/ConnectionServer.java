@@ -38,23 +38,25 @@ public abstract class ConnectionServer extends Server {
             onServerStarted();
             while (true) {
 
-                try (
-                    var clientSocket = socket.accept();
-                    var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
-                    var out = new PrintWriter(clientSocket.getOutputStream())
-                ) {
-                
-                    new Thread(() -> {
+                var clientSocket = socket.accept();
+                new Thread(() -> {
 
-                        try {
-                            
-                            var request = in.readLine();
-                            var response = handleRequest(parseRequest(request));
-                            out.println(response.serialize());
-                            out.flush();
-                        } catch (IOException e) { e.printStackTrace(); }
-                    }).start();
-                }
+                    try (
+                        var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
+                        var out = new PrintWriter(clientSocket.getOutputStream())
+                    ) {
+
+                        var request = in.readLine();
+                        var response = handleRequest(parseRequest(request));
+                        out.println(response.serialize());
+                        out.flush();
+                    } catch (IOException e) {  e.printStackTrace(); }
+                    finally {
+
+                        try { clientSocket.close(); } 
+                        catch (IOException e) { e.printStackTrace(); }
+                    }
+                }).start();
             }
         } catch (IOException e) { e.printStackTrace(); }
     }
