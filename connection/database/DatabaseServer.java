@@ -2,64 +2,40 @@ package jsi.connection.database;
 
 import jsi.Request;
 import jsi.connection.ConnectionServer;
-import jsi.connection.database.engine.DatabaseEngine;
-import jsi.connection.database.storage.StorageEngine;
 
 /**
  * Abstract class representing a database server.
  * Extends ConnectionServer to handle database client connections.
- * @param <T> the type of DatabaseEngine
- * @param <Q> the type of Query
  */
-public abstract class DatabaseServer<T extends DatabaseEngine<Q>, Q extends Query<?>> extends ConnectionServer {
+public abstract class DatabaseServer extends ConnectionServer {
 
-    private T databaseEngine;
-    private StorageEngine storageEngine;
+    private DatabaseEngine databaseEngine;
 
     /**
      * Constructor for DatabaseServer.
      * @param port the port number
      */
-    public DatabaseServer(int port, T databaseEngine, StorageEngine storageEngine) {
+    public DatabaseServer(int port, DatabaseEngine databaseEngine) {
 
         super(port);
         this.databaseEngine = databaseEngine;
-        this.storageEngine = storageEngine;
     }
 
     /**
      * Get the DatabaseEngine instance.
      * @return the DatabaseEngine
      */
-    public T getDatabaseEngine() { return databaseEngine; }
+    public DatabaseEngine getDatabaseEngine() { return databaseEngine; }
 
     /**
-     * Get the StorageEngine instance.
-     * @return the StorageEngine
-     */   
-    public StorageEngine getStorageEngine() { return storageEngine; }
-
-    /**
-     * Parse the incoming request string into a Query object.
-     * @param input the input string representing the request
-     * @return the parsed Query object
+     * Handle incoming requests and execute database queries.
+     * @param query the incoming Request
+     * @return the QueryResult from executing the query
      */
     @Override
-    protected abstract Q parseRequest(String input);
+    public QueryResult handleRequest(Request query) {
 
-    /**
-     * Handle the incoming request and return the query result.
-     * @param request the incoming request
-     * @return the result of the query execution
-     */
-    @Override
-    public QueryResult handleRequest(Request request) {
-        
-        if (request instanceof Query q) {
-
-            var query = parseRequest(q.getRawQuery());
-            return databaseEngine.execute(query);
-        }
+        if (query instanceof Query q) return databaseEngine.execute(q);
         return null;
     }
 }

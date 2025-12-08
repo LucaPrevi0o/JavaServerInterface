@@ -56,7 +56,7 @@ public abstract class QueryCondition {
 
         this.logicalOperator = operator;
         this.subConditions = new ArrayList<>();
-        for (QueryCondition condition : conditions)
+        for (var condition : conditions)
             if (condition != null) this.subConditions.add(condition);
     }
     

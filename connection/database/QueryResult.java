@@ -1,7 +1,6 @@
 package jsi.connection.database;
 
 import java.util.List;
-import java.util.Map;
 
 import jsi.Response;
 
@@ -9,20 +8,20 @@ import jsi.Response;
  * Class representing the result of a database query.
  * Extends Response to be used in client-server communication.
  */
-public class QueryResult extends Response {
+public class QueryResult implements Response {
 
     private boolean success;
     private String message;
-    private List<Map<String, Object>> data;
+    private List<Field> data;
 
     /**
      * Constructor for QueryResult.
      */
-    public QueryResult() {
+    public QueryResult(boolean success, String message, List<Field> data) {
 
-        this.success = false;
-        this.message = "";
-        this.data = null;
+        this.success = success;
+        this.message = message;
+        this.data = data;
     }
 
     /**
@@ -31,12 +30,6 @@ public class QueryResult extends Response {
      */
     public boolean isSuccess() { return success; }
 
-    /**     
-     * * Sets the success status of the query.
-     * @param success true if successful, false otherwise
-     */
-    public void setSuccess(boolean success) { this.success = success; }
-
     /**
      * Gets the message associated with the query result.
      * @return the message
@@ -44,22 +37,10 @@ public class QueryResult extends Response {
     public String getMessage() { return message; }
 
     /**
-     * Sets the message associated with the query result.
-     * @param message the message to set
-     */
-    public void setMessage(String message) { this.message = message; }
-
-    /**
      * Gets the data returned by the query.
      * @return the data as a list of maps
      */
-    public List<Map<String, Object>> getData() { return data; }
-
-    /**
-     * Sets the data returned by the query.
-     * @param data the data to set as a list of maps
-     */
-    public void setData(List<Map<String, Object>> data) { this.data = data; }
+    public List<Field> getData() { return data; }
 
     /**  
      * * Serializes the QueryResult into a string format for transmission.
@@ -70,7 +51,7 @@ public class QueryResult extends Response {
     @Override
     public String serialize() {
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.append(success ? "SUCCESS" : "ERROR").append("|");
         sb.append(message != null ? message : "").append("|");
         
@@ -81,13 +62,10 @@ public class QueryResult extends Response {
             for (int i = 0; i < data.size(); i++) {
 
                 if (i > 0) sb.append(";");
-                Map<String, Object> row = data.get(i);
-                sb.append(row.toString());
+                var row = data.get(i);
+                sb.append(row.getName()).append("=").append(row.getValue());
             }
-        } else {
-            sb.append("0|");
-        }
-        
+        } else sb.append("0|");
         return sb.toString();
     }
     
