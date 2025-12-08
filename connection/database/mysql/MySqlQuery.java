@@ -19,10 +19,10 @@ public class MySqlQuery extends Query<MySqlQueryCondition> {
 
         // Determine query type
         var queryType = MySqlQueryManager.determineQueryType(sql);
-        this.queryType = queryType.getQueryCategory();
+        this.queryType = queryType;
         
         // Parse based on query type
-        switch (queryType.getQueryCategory()) {
+        switch (queryType.getOperationType()) {
             case READ:
                 MySqlQueryManager.parseSelect(sql, this);
                 break;

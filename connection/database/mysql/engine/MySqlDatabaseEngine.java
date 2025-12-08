@@ -37,8 +37,6 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         this.tables = new ConcurrentHashMap<>();
         this.tableSchemas = new ConcurrentHashMap<>();
         this.storageEngine = storageEngine;
-        
-        loadFromStorage();
     }
     /**
      * Executes a database query.
@@ -49,16 +47,16 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
     public QueryResult execute(MySqlQuery query) {
 
         if (!(query instanceof MySqlQuery)) return createErrorResult("Invalid query type");
-        var mySqlQuery = (MySqlQuery) query;
+        loadFromStorage();
         
         try {
 
-            return switch (mySqlQuery.getQueryType()) {
-                case READ -> executeSelect(mySqlQuery);
-                case CREATE -> executeInsert(mySqlQuery);
-                case UPDATE -> executeUpdate(mySqlQuery);
-                case DELETE -> executeDelete(mySqlQuery);
-                default -> createErrorResult("Unsupported query type: " + mySqlQuery.getQueryType());
+            return switch (query.getQueryType().getOperationType()) {
+                case READ -> executeSelect(query);
+                case CREATE -> executeInsert(query);
+                case UPDATE -> executeUpdate(query);
+                case DELETE -> executeDelete(query);
+                default -> createErrorResult("Unsupported query type: " + query.getQueryType());
             };
         } catch (Exception e) { return createErrorResult("Query execution error: " + e.getMessage()); }
     }
@@ -118,6 +116,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         
         // Create table if it doesn't exist
         if (!tables.containsKey(tableName)) {
+
             tables.put(tableName, new ArrayList<>());
             tableSchemas.put(tableName, new HashSet<>());
             isNewTable = true;
@@ -127,6 +126,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         var dataValues = query.getDataValues();
 
         if (dataValues != null) {
+
             newRow.putAll(dataValues);
             // Update schema with new columns
             tableSchemas.get(tableName).addAll(dataValues.keySet());
@@ -138,10 +138,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         saveTableToStorage(tableName);
         
         // Save schema if table was created or columns were added
-        if (isNewTable || (dataValues != null && !dataValues.isEmpty())) {
-            saveSchemaToStorage();
-        }
-        
+        if (isNewTable || (dataValues != null && !dataValues.isEmpty())) saveSchemaToStorage();
         return createSuccessResult("INSERT successful. 1 row affected.", null);
     }
 
@@ -157,24 +154,23 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
 
         var rows = tables.get(tableName);
         var updates = query.getDataValues();
-        int affectedRows = 0;
-        boolean schemaChanged = false;
+        var affectedRows = 0;
+        var schemaChanged = false;
 
         if (updates != null) {
+
             // Check if we're adding new columns
-            Set<String> currentSchema = tableSchemas.get(tableName);
-            for (String key : updates.keySet()) {
-                if (!currentSchema.contains(key)) {
-                    currentSchema.add(key);
-                    schemaChanged = true;
-                }
+            var currentSchema = tableSchemas.get(tableName);
+            for (var key : updates.keySet()) if (!currentSchema.contains(key)) {
+
+                currentSchema.add(key);
+                schemaChanged = true;
             }
             
-            for (var row : rows) {
-                if (query.getWhereCondition() == null || evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition())) {
-                    row.putAll(updates);
-                    affectedRows++;
-                }
+            for (var row : rows) if (query.getWhereCondition() == null || evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition())) {
+
+                row.putAll(updates);
+                affectedRows++;
             }
         }
 
@@ -198,11 +194,8 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         var rows = tables.get(tableName);
         var originalSize = rows.size();
 
-        if (query.getWhereCondition() != null) {
-            rows.removeIf(row -> evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition()));
-        } else {
-            rows.clear();
-        }
+        if (query.getWhereCondition() != null) rows.removeIf(row -> evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition()));
+        else rows.clear();
 
         var affectedRows = originalSize - rows.size();
         
@@ -224,12 +217,11 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
         if (condition == null) return true;
         
         // Handle simple conditions
-        if (condition.isSimpleCondition()) {
-            return evaluateSimpleCondition(row, condition);
-        }
+        if (condition.isSimpleCondition()) return evaluateSimpleCondition(row, condition);
         
         // Handle complex conditions (AND/OR/NOT)
         if (condition.isComplexCondition()) {
+
             var logicalOp = condition.getLogicalOperator();
             var subConditions = condition.getSubConditions();
             
@@ -433,6 +425,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
 
             // Load all table names
             var tableNames = storageEngine.loadTableNames();
+            tableNames.add("schema");
             
             // Load each table's schema and data
             for (var tableName : tableNames) {

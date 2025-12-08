@@ -190,11 +190,18 @@ public class JsonStorageEngine implements StorageEngine {
     public Set<String> loadTableNames() {
         lock.readLock().lock();
         try {
-            byte[] schemaData = read("_schema");
-            if (schemaData == null) return new HashSet<>();
+            // Load from table_schema table
+            List<Map<String, Object>> schemaRows = loadTable("table_schema");
+            Set<String> tableNames = new HashSet<>();
             
-            String json = new String(schemaData, StandardCharsets.UTF_8);
-            return parseTableNamesFromJson(json);
+            for (Map<String, Object> row : schemaRows) {
+                Object tableName = row.get("table_name");
+                if (tableName != null) {
+                    tableNames.add(tableName.toString());
+                }
+            }
+            
+            return tableNames;
         } finally {
             lock.readLock().unlock();
         }
@@ -204,11 +211,25 @@ public class JsonStorageEngine implements StorageEngine {
     public Set<String> loadTableSchema(String tableName) {
         lock.readLock().lock();
         try {
-            byte[] schemaData = read("_schema");
-            if (schemaData == null) return new HashSet<>();
+            // Load from table_schema table
+            List<Map<String, Object>> schemaRows = loadTable("table_schema");
+            Set<String> columns = new HashSet<>();
             
-            String json = new String(schemaData, StandardCharsets.UTF_8);
-            return parseTableSchemaFromJson(json, tableName);
+            for (Map<String, Object> row : schemaRows) {
+                Object tableNameObj = row.get("table_name");
+                if (tableNameObj != null && tableNameObj.toString().equals(tableName)) {
+                    Object columnsObj = row.get("columns");
+                    if (columnsObj != null) {
+                        // Columns are stored as comma-separated values
+                        String columnsStr = columnsObj.toString();
+                        for (String col : columnsStr.split(",")) {
+                            columns.add(col.trim());
+                        }
+                    }
+                }
+            }
+            
+            return columns;
         } finally {
             lock.readLock().unlock();
         }
@@ -218,7 +239,9 @@ public class JsonStorageEngine implements StorageEngine {
     public List<Map<String, Object>> loadTable(String tableName) {
         lock.readLock().lock();
         try {
-            byte[] tableData = read("table_" + tableName);
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            byte[] tableData = read(key);
             if (tableData == null) return new ArrayList<>();
             
             String json = new String(tableData, StandardCharsets.UTF_8);
@@ -233,7 +256,9 @@ public class JsonStorageEngine implements StorageEngine {
         lock.writeLock().lock();
         try {
             String json = serializeTableToJson(tableName, rows);
-            write("table_" + tableName, json.getBytes(StandardCharsets.UTF_8));
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            write(key, json.getBytes(StandardCharsets.UTF_8));
         } finally {
             lock.writeLock().unlock();
         }
@@ -243,8 +268,19 @@ public class JsonStorageEngine implements StorageEngine {
     public void saveSchemas(Map<String, Set<String>> schemas) {
         lock.writeLock().lock();
         try {
-            String json = serializeSchemasToJson(schemas);
-            write("_schema", json.getBytes(StandardCharsets.UTF_8));
+            // Convert schemas map to table_schema table rows
+            List<Map<String, Object>> schemaRows = new ArrayList<>();
+            
+            for (Map.Entry<String, Set<String>> entry : schemas.entrySet()) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("table_name", entry.getKey());
+                // Store columns as comma-separated string
+                row.put("columns", String.join(",", entry.getValue()));
+                schemaRows.add(row);
+            }
+            
+            // Save as table_schema table
+            saveTable("table_schema", schemaRows);
         } finally {
             lock.writeLock().unlock();
         }
@@ -254,13 +290,15 @@ public class JsonStorageEngine implements StorageEngine {
     public void deleteTable(String tableName) {
         lock.writeLock().lock();
         try {
-            delete("table_" + tableName);
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            delete(key);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    // JSON serialization/deserialization
+    // JSON serialization
 
     private String serializeTableToJson(String tableName, List<Map<String, Object>> rows) {
         StringBuilder json = new StringBuilder();
@@ -284,23 +322,6 @@ public class JsonStorageEngine implements StorageEngine {
         }
         
         json.append("]}");
-        return json.toString();
-    }
-
-    private String serializeSchemasToJson(Map<String, Set<String>> schemas) {
-        StringBuilder json = new StringBuilder();
-        json.append("{\"tables\":{");
-        
-        int tableIndex = 0;
-        for (Map.Entry<String, Set<String>> entry : schemas.entrySet()) {
-            if (tableIndex > 0) json.append(",");
-            json.append("\"").append(entry.getKey()).append("\":[\"")
-                .append(String.join("\",\"", entry.getValue()))
-                .append("\"]");
-            tableIndex++;
-        }
-        
-        json.append("}}");
         return json.toString();
     }
 
@@ -337,59 +358,5 @@ public class JsonStorageEngine implements StorageEngine {
         }
         
         return rows;
-    }
-
-    private Set<String> parseTableNamesFromJson(String json) {
-        Set<String> tableNames = new HashSet<>();
-        
-        int tablesStart = json.indexOf("{\"tables\":{") + 11;
-        int tablesEnd = json.lastIndexOf("}");
-        
-        if (tablesStart < 11 || tablesEnd <= tablesStart) return tableNames;
-        
-        String tablesJson = json.substring(tablesStart, tablesEnd);
-        String[] tableArray = tablesJson.split(",(?=\")");
-        
-        for (String tableStr : tableArray) {
-            int colonIndex = tableStr.indexOf(":");
-            if (colonIndex > 0) {
-                String tableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
-                tableNames.add(tableName);
-            }
-        }
-        
-        return tableNames;
-    }
-
-    private Set<String> parseTableSchemaFromJson(String json, String tableName) {
-        Set<String> columns = new HashSet<>();
-        
-        int tablesStart = json.indexOf("{\"tables\":{") + 11;
-        int tablesEnd = json.lastIndexOf("}");
-        
-        if (tablesStart < 11 || tablesEnd <= tablesStart) return columns;
-        
-        String tablesJson = json.substring(tablesStart, tablesEnd);
-        String[] tableArray = tablesJson.split(",(?=\")");
-        
-        for (String tableStr : tableArray) {
-            int colonIndex = tableStr.indexOf(":");
-            if (colonIndex > 0) {
-                String currentTableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
-                if (currentTableName.equals(tableName)) {
-                    String columnsStr = tableStr.substring(colonIndex + 1)
-                        .replace("[", "").replace("]", "").replace("\"", "").trim();
-                    
-                    if (!columnsStr.isEmpty()) {
-                        for (String col : columnsStr.split(",")) {
-                            columns.add(col.trim());
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        
-        return columns;
     }
 }
