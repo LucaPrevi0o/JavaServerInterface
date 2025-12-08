@@ -3,12 +3,11 @@ package jsi;
 /**
  * Abstract class representing a generic response.
  */
-public abstract class Response {
-
+public interface Response {
 
     /**
      * Serialize the response to a string format suitable for transmission.
      * @return the serialized response
      */
-    public abstract String serialize();
+    public String serialize();
 }

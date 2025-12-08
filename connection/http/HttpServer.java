@@ -96,7 +96,8 @@ public abstract class HttpServer extends ConnectionServer {
      * @param input the raw HTTP request string
      * @return the parsed HttpRequest object
      */
-    public HttpRequest parseRequest(String input) { return new HttpRequest().parse(input); }
+    @Override
+    public HttpRequest parseRequest(String input) { return new HttpRequest(input); }
 
     /**
      * Create a response based on the incoming request.

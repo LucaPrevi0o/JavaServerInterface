@@ -11,7 +11,7 @@ import jsi.connection.http.request.HttpRequestType;
  * Class representing an HTTP request.
  * Extends the {@link Request Request} class.
  */
-public class HttpRequest extends Request {
+public class HttpRequest implements Request {
 
     private String path;
     private HttpRequestType requestType;
@@ -177,14 +177,39 @@ public class HttpRequest extends Request {
      * @param input the input string representing the request
      * @return an HttpRequest object
      */
-    public HttpRequest parse(String input) {
+    public HttpRequest(String input) {
 
         var type = extractType(input);
         var params = extractParameters(input);
         var headers = extractHeaders(input);
         var request = createRequest(type, params, headers);
         request.path = extractPath(input);
-        return request;
+    }
+
+    /**
+     * Serialize the request into a string format.
+     * @return the serialized request string
+     */
+    @Override
+    public String serialize() {
+        
+        var sb = new StringBuilder();
+        sb.append(requestType != null ? requestType.name() : "UNKNOWN").append(" ");
+        sb.append(path != null ? path : "/").append(" HTTP/1.1\r\n");
+        
+        if (headers != null) for (var header : headers)
+            sb.append(header.getName()).append(": ").append(header.getValue()).append("\r\n");
+        
+        sb.append("\r\n");
+        
+        if (parameters != null && parameters.length > 0) for (int i = 0; i < parameters.length; i++) {
+
+            var param = parameters[i];
+            sb.append(param.getName()).append("=").append(param.getValue());
+            if (i < parameters.length - 1) sb.append("&");
+        }
+
+        return sb.toString();
     }
 
     /**

@@ -8,14 +8,28 @@ import jsi.response.ResponseType;
 /**
  * Represents an HTTP response.
  */
-public class HttpResponse extends Response {
+public class HttpResponse implements Response {
     
     private ResponseType responseType;
     private ResponseHeader[] headers;
     private ResponseBody body;
 
+    /**
+     * Get the response type.
+     * @return the response type
+     */
     public ResponseType getResponseType() { return responseType; }
+
+    /**
+     * Get the response headers.
+     * @return the response headers
+     */
     public ResponseHeader[] getHeaders() { return headers; }
+
+    /**
+     * Get the response body.
+     * @return the response body
+     */
     public ResponseBody getBody() { return body; }
     
     /**
