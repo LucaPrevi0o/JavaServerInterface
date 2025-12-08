@@ -8,10 +8,10 @@ import java.util.Map;
  * Abstract class representing a database query.
  * Extends Request to be used in client-server communication.
  */
-public abstract class Query extends Request {
+public abstract class Query<T extends QueryCondition> extends Request {
 
     protected String rawQuery;
-    protected QueryType operationType; // READ, WRITE, UPDATE, DELETE
+    protected QueryType queryType; // READ, WRITE, UPDATE, DELETE
     protected String targetCollection;
     
     /**
@@ -33,7 +33,7 @@ public abstract class Query extends Request {
      * The WHERE condition for filtering records.
      * Used in SELECT, UPDATE, and DELETE operations.
      */
-    protected QueryCondition whereCondition;
+    protected T whereCondition;
 
     /**
      * Get the raw query string.
@@ -45,7 +45,7 @@ public abstract class Query extends Request {
      * Get the type of operation for the query.
      * @return the QueryType
      */
-    public QueryType getOperationType() { return operationType; }
+    public QueryType getQueryType() { return queryType; }
 
     /**
      * Get the target collection (table) for the query.
@@ -69,7 +69,7 @@ public abstract class Query extends Request {
      * Get the WHERE condition for filtering.
      * @return the QueryCondition object
      */
-    public QueryCondition getWhereCondition() { return whereCondition; }
+    public T getWhereCondition() { return whereCondition; }
     
     /**
      * Set the raw query string.
@@ -79,9 +79,9 @@ public abstract class Query extends Request {
 
     /**
      * Set the type of operation for the query.
-     * @param operationType the QueryType
+     * @param queryType the QueryType
      */
-    public void setOperationType(QueryType operationType) { this.operationType = operationType; }
+    public void setQueryType(QueryType queryType) { this.queryType = queryType; }
 
     /**
      * Set the target collection (table) for the query.
@@ -105,29 +105,5 @@ public abstract class Query extends Request {
      * Set the WHERE condition for filtering.
      * @param whereCondition the QueryCondition object
      */
-    public void setWhereCondition(QueryCondition whereCondition) { this.whereCondition = whereCondition; }
-    
-    /**
-     * @deprecated Use getAffectedFields() instead. This method will be removed in a future version.
-     */
-    @Deprecated
-    public List<String> getProjectionFields() { return affectedFields; }
-    
-    /**
-     * @deprecated Use setAffectedFields() instead. This method will be removed in a future version.
-     */
-    @Deprecated
-    public void setProjectionFields(List<String> projectionFields) { this.affectedFields = projectionFields; }
-    
-    /**
-     * @deprecated Use getDataValues() instead. This method will be removed in a future version.
-     */
-    @Deprecated
-    public Map<String, Object> getFilters() { return dataValues; }
-    
-    /**
-     * @deprecated Use setDataValues() instead. This method will be removed in a future version.
-     */
-    @Deprecated
-    public void setFilters(Map<String, Object> filters) { this.dataValues = filters; }
+    public void setWhereCondition(T whereCondition) { this.whereCondition = whereCondition; }
 }

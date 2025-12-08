@@ -8,18 +8,19 @@ import jsi.connection.database.storage.StorageEngine;
 /**
  * Abstract class representing a database server.
  * Extends ConnectionServer to handle database client connections.
- * @param <T> the type of DatabaseClientHandler
+ * @param <T> the type of DatabaseEngine
+ * @param <Q> the type of Query
  */
-public abstract class DatabaseServer extends ConnectionServer {
+public abstract class DatabaseServer<T extends DatabaseEngine<Q>, Q extends Query<?>> extends ConnectionServer {
 
-    private DatabaseEngine databaseEngine;
+    private T databaseEngine;
     private StorageEngine storageEngine;
 
     /**
      * Constructor for DatabaseServer.
      * @param port the port number
      */
-    public DatabaseServer(int port, DatabaseEngine databaseEngine, StorageEngine storageEngine) {
+    public DatabaseServer(int port, T databaseEngine, StorageEngine storageEngine) {
 
         super(port);
         this.databaseEngine = databaseEngine;
@@ -30,7 +31,7 @@ public abstract class DatabaseServer extends ConnectionServer {
      * Get the DatabaseEngine instance.
      * @return the DatabaseEngine
      */
-    public DatabaseEngine getDatabaseEngine() { return databaseEngine; }
+    public T getDatabaseEngine() { return databaseEngine; }
 
     /**
      * Get the StorageEngine instance.
@@ -44,7 +45,7 @@ public abstract class DatabaseServer extends ConnectionServer {
      * @return the parsed Query object
      */
     @Override
-    protected abstract Query parseRequest(String input);
+    protected abstract Q parseRequest(String input);
 
     /**
      * Handle the incoming request and return the query result.

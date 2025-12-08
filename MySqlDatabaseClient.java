@@ -1,7 +1,6 @@
 package jsi;
 import jsi.connection.database.Query;
 import jsi.connection.database.QueryResult;
-import jsi.connection.database.mysql.MySqlQueryManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,21 +20,8 @@ public class MySqlDatabaseClient extends DatabaseClient {
     @Override
     protected String serializeRequest(Request request) {
 
-        if (request instanceof Query) return ((Query) request).getRawQuery();
+        if (request instanceof Query<?>) return ((Query<?>) request).getRawQuery();
         return super.serializeRequest(request);
-    }
-
-    /**
-     * Execute a raw SQL query string.
-     * @param queryString the SQL query string
-     * @return the QueryResult from the server
-     */
-    @Override
-    public QueryResult executeQuery(String queryString) {
-
-        var query = MySqlQueryManager.parse(queryString);
-        query.setRawQuery(queryString);
-        return executeQuery(query);
     }
 
     /**

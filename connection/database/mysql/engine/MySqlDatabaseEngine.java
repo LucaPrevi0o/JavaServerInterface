@@ -3,8 +3,7 @@ package jsi.connection.database.mysql.engine;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jsi.connection.database.Query;
-import jsi.connection.database.QueryCondition;
+import jsi.connection.database.mysql.MySqlQueryCondition;
 import jsi.connection.database.QueryResult;
 import jsi.connection.database.Schema;
 import jsi.connection.database.engine.DatabaseEngine;
@@ -16,7 +15,7 @@ import jsi.connection.database.storage.StorageEngine;
  * Supports basic SQL operations: SELECT, INSERT, UPDATE, DELETE, CREATE, DROP.
  * Uses in-memory storage with optional persistence via StorageEngine.
  */
-public class MySqlDatabaseEngine implements DatabaseEngine {
+public class MySqlDatabaseEngine implements DatabaseEngine<MySqlQuery> {
 
     // In-memory storage: table -> rows
     private final Map<String, List<Map<String, Object>>> tables;
@@ -41,21 +40,25 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         
         loadFromStorage();
     }
-
+    /**
+     * Executes a database query.
+     * @param query the Query object
+     * @return the QueryResult object
+     */
     @Override
-    public QueryResult execute(Query query) {
+    public QueryResult execute(MySqlQuery query) {
 
         if (!(query instanceof MySqlQuery)) return createErrorResult("Invalid query type");
         var mySqlQuery = (MySqlQuery) query;
         
         try {
 
-            return switch (mySqlQuery.getOperationType()) {
+            return switch (mySqlQuery.getQueryType()) {
                 case READ -> executeSelect(mySqlQuery);
                 case CREATE -> executeInsert(mySqlQuery);
                 case UPDATE -> executeUpdate(mySqlQuery);
                 case DELETE -> executeDelete(mySqlQuery);
-                default -> createErrorResult("Unsupported query type: " + mySqlQuery.getOperationType());
+                default -> createErrorResult("Unsupported query type: " + mySqlQuery.getQueryType());
             };
         } catch (Exception e) { return createErrorResult("Query execution error: " + e.getMessage()); }
     }
@@ -76,7 +79,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         // Filter rows by WHERE condition
         for (var row : rows) {
 
-            if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
+            if (query.getWhereCondition() == null || evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition())) {
 
                 var selectedRow = new HashMap<String, Object>();
                 
@@ -168,7 +171,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
             }
             
             for (var row : rows) {
-                if (query.getWhereCondition() == null || evaluateCondition(row, query.getWhereCondition())) {
+                if (query.getWhereCondition() == null || evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition())) {
                     row.putAll(updates);
                     affectedRows++;
                 }
@@ -196,7 +199,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
         var originalSize = rows.size();
 
         if (query.getWhereCondition() != null) {
-            rows.removeIf(row -> evaluateCondition(row, query.getWhereCondition()));
+            rows.removeIf(row -> evaluateCondition(row, (MySqlQueryCondition)query.getWhereCondition()));
         } else {
             rows.clear();
         }
@@ -216,7 +219,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      * @param condition the QueryCondition to evaluate
      * @return true if the condition is satisfied, false otherwise
      */
-    private boolean evaluateCondition(Map<String, Object> row, QueryCondition condition) {
+    private boolean evaluateCondition(Map<String, Object> row, MySqlQueryCondition condition) {
 
         if (condition == null) return true;
         
@@ -233,7 +236,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
             return switch (logicalOp) {
                 case AND -> {
                     for (var subCondition : subConditions) {
-                        if (!evaluateCondition(row, subCondition)) {
+                        if (!evaluateCondition(row, (MySqlQueryCondition)subCondition)) {
                             yield false;
                         }
                     }
@@ -241,7 +244,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
                 }
                 case OR -> {
                     for (var subCondition : subConditions) {
-                        if (evaluateCondition(row, subCondition)) {
+                        if (evaluateCondition(row, (MySqlQueryCondition)subCondition)) {
                             yield true;
                         }
                     }
@@ -249,7 +252,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
                 }
                 case NOT -> {
                     if (!subConditions.isEmpty()) {
-                        yield !evaluateCondition(row, subConditions.get(0));
+                        yield !evaluateCondition(row, (MySqlQueryCondition)subConditions.get(0));
                     }
                     yield true;
                 }
@@ -266,7 +269,7 @@ public class MySqlDatabaseEngine implements DatabaseEngine {
      * @param condition the simple QueryCondition
      * @return true if the condition is satisfied, false otherwise
      */
-    private boolean evaluateSimpleCondition(Map<String, Object> row, QueryCondition condition) {
+    private boolean evaluateSimpleCondition(Map<String, Object> row, MySqlQueryCondition condition) {
 
         var fieldName = condition.getFieldName();
         var operator = condition.getComparisonOperator();

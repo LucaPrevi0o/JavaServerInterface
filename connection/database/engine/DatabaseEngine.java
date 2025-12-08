@@ -8,14 +8,14 @@ import jsi.connection.database.Schema;
  * Interface representing a database engine.
  * Defines methods for executing queries and managing transactions.
  */
-public interface DatabaseEngine {
+public interface DatabaseEngine<T extends Query<?>> {
 
     /**
      * Execute a query and return a response.
      * @param query the Query to execute
      * @return the Response from the execution
      */
-    QueryResult execute(Query query);
+    QueryResult execute(T query);
 
     /**
      * Begin a transaction.
