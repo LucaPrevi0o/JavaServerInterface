@@ -45,11 +45,23 @@ public class HttpRequest extends Request {
     public String getPath() { return path; }
 
     /**
+     * Get a specific request parameter by name.
+     * @param name the name of the request parameter
+     * @return the HttpRequestParameter object, or null if not found
+     */
+    public Object getParameter(String name) {
+
+        if (name == null || name.isEmpty() || parameters == null) return null;
+        for (var param : parameters) if (param.getName().equals(name)) return param.getValue();
+        return null;
+    }
+
+    /**
      * Get the request type from the input string.
      * @param input the input string representing the request
      * @return the request type
      */
-    protected HttpRequestType getRequestType(String input) {
+    protected HttpRequestType extractType(String input) {
 
         // Implementation for extracting HTTP request type from input
         if (input == null || input.isEmpty()) return null;
@@ -64,7 +76,7 @@ public class HttpRequest extends Request {
     * @param input the input string representing the request
     * @return an array of request parameters
     */
-    protected HttpRequestParameter[] getRequestParameters(String input) {
+    protected HttpRequestParameter[] extractParameters(String input) {
 
         if (input == null || input.isEmpty())  return new HttpRequestParameter[0];
 
@@ -118,7 +130,7 @@ public class HttpRequest extends Request {
      * @param input the input string representing the request
      * @return an array of request headers
      */
-    protected HttpRequestHeader[] getRequestHeaders(String input) {
+    protected HttpRequestHeader[] extractHeaders(String input) {
 
         if (input == null || input.isEmpty()) return new HttpRequestHeader[0];
 
@@ -167,9 +179,9 @@ public class HttpRequest extends Request {
      */
     public HttpRequest parse(String input) {
 
-        var type = getRequestType(input);
-        var params = getRequestParameters(input);
-        var headers = getRequestHeaders(input);
+        var type = extractType(input);
+        var params = extractParameters(input);
+        var headers = extractHeaders(input);
         var request = createRequest(type, params, headers);
         request.path = extractPath(input);
         return request;

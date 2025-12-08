@@ -13,5 +13,5 @@ public interface RequestParameter {
      * @param input the input string
      * @return the value of the request parameter
      */
-    public String getValue();
+    public Object getValue();
 }
