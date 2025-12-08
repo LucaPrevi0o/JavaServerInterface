@@ -1,9 +1,6 @@
 package jsi.connection.database;
 
-public enum QueryType {
+public interface QueryType {
     
-    READ,
-    CREATE,
-    UPDATE,
-    DELETE
+    OperationType getOperationType();
 }

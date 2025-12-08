@@ -8,53 +8,13 @@ import java.util.regex.Pattern;
  * Utility class for parsing and managing MySQL queries.
  */
 public class MySqlQueryManager {
-    
-    /**
-     * Parse a SQL query string into a MySqlQuery object.
-     * Supports basic SELECT, INSERT, UPDATE, and DELETE statements.
-     * 
-     * @param input the SQL query string
-     * @return a parsed MySqlQuery object
-     */
-    public static MySqlQuery parse(String input) {
-        
-        if (input == null || input.trim().isEmpty()) throw new IllegalArgumentException("Query cannot be null or empty");
-
-        var query = new MySqlQuery();
-        var sql = input.trim();
-        query.setRawQuery(sql);
-
-        // Determine query type
-        var queryType = determineQueryType(sql);
-        query.setOperationType(queryType.getQueryCategory());
-        // Parse based on query type
-        switch (queryType.getQueryCategory()) {
-            case READ:
-                parseSelect(sql, query);
-                break;
-            case CREATE:
-                parseInsert(sql, query);
-                break;
-            case UPDATE:
-                parseUpdate(sql, query);
-                break;
-            case DELETE:
-                parseDelete(sql, query);
-                break;
-            default:
-                // For CREATE, DROP, ALTER - just store raw SQL
-                break;
-        }
-
-        return query;
-    }
 
     /**
      * Determine the type of SQL query.
      * @param sql the SQL query string
      * @return the QueryType enum value
      */
-    private static MySqlQueryType determineQueryType(String sql) {
+    public static MySqlQueryType determineQueryType(String sql) {
         
         var upperSql = sql.toUpperCase().trim();
         
@@ -69,7 +29,7 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
-    private static void parseSelect(String sql, MySqlQuery query) {
+    public static void parseSelect(String sql, MySqlQuery query) {
         
         // Extract table name
         var tablePattern = Pattern.compile("FROM\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
@@ -98,7 +58,7 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
-    private static void parseInsert(String sql, MySqlQuery query) {
+    public static void parseInsert(String sql, MySqlQuery query) {
         
         // Extract table name
         var tablePattern = Pattern.compile("INSERT\\s+INTO\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
@@ -142,7 +102,7 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
-    private static void parseUpdate(String sql, MySqlQuery query) {
+    public static void parseUpdate(String sql, MySqlQuery query) {
         
         // Extract table name
         var tablePattern = Pattern.compile("UPDATE\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
@@ -180,7 +140,7 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
-    private static void parseDelete(String sql, MySqlQuery query) {
+    public static void parseDelete(String sql, MySqlQuery query) {
         
         // Extract table name
         var tablePattern = Pattern.compile("DELETE\\s+FROM\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
@@ -196,7 +156,7 @@ public class MySqlQueryManager {
      * @param sql the SQL query string
      * @param query the MySqlQuery object to populate
      */
-    private static void extractWhereClause(String sql, MySqlQuery query) {
+    public static void extractWhereClause(String sql, MySqlQuery query) {
 
         var wherePattern = Pattern.compile("WHERE\\s+(.+?)(?:;|$)", Pattern.CASE_INSENSITIVE);
         var whereMatcher = wherePattern.matcher(sql);

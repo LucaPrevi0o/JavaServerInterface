@@ -182,11 +182,21 @@ public class JsonStorageEngine implements StorageEngine {
 
         lock.readLock().lock();
         try {
-
-            var schemaData = read("_schema");
-            var json = new String(schemaData, StandardCharsets.UTF_8);
-            return parseTableNamesFromJson(json);
-        } finally { lock.readLock().unlock(); }
+            // Load from table_schema table
+            List<Map<String, Object>> schemaRows = loadTable("table_schema");
+            Set<String> tableNames = new HashSet<>();
+            
+            for (Map<String, Object> row : schemaRows) {
+                Object tableName = row.get("table_name");
+                if (tableName != null) {
+                    tableNames.add(tableName.toString());
+                }
+            }
+            
+            return tableNames;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -199,11 +209,28 @@ public class JsonStorageEngine implements StorageEngine {
 
         lock.readLock().lock();
         try {
+            // Load from table_schema table
+            List<Map<String, Object>> schemaRows = loadTable("table_schema");
+            Set<String> columns = new HashSet<>();
             
-            var schemaData = read("_schema");
-            var json = new String(schemaData, StandardCharsets.UTF_8);
-            return parseTableSchemaFromJson(json, tableName);
-        } finally { lock.readLock().unlock(); }
+            for (Map<String, Object> row : schemaRows) {
+                Object tableNameObj = row.get("table_name");
+                if (tableNameObj != null && tableNameObj.toString().equals(tableName)) {
+                    Object columnsObj = row.get("columns");
+                    if (columnsObj != null) {
+                        // Columns are stored as comma-separated values
+                        String columnsStr = columnsObj.toString();
+                        for (String col : columnsStr.split(",")) {
+                            columns.add(col.trim());
+                        }
+                    }
+                }
+            }
+            
+            return columns;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -216,6 +243,10 @@ public class JsonStorageEngine implements StorageEngine {
 
         lock.readLock().lock();
         try {
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            byte[] tableData = read(key);
+            if (tableData == null) return new ArrayList<>();
             
             var tableData = read("table_" + tableName);
             var json = new String(tableData, StandardCharsets.UTF_8);
@@ -233,10 +264,13 @@ public class JsonStorageEngine implements StorageEngine {
 
         lock.writeLock().lock();
         try {
-            
-            var json = serializeTableToJson(tableName, rows);
-            write("table_" + tableName, json.getBytes(StandardCharsets.UTF_8));
-        } finally { lock.writeLock().unlock(); }
+            String json = serializeTableToJson(tableName, rows);
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            write(key, json.getBytes(StandardCharsets.UTF_8));
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -248,10 +282,22 @@ public class JsonStorageEngine implements StorageEngine {
 
         lock.writeLock().lock();
         try {
-
-            var json = serializeSchemasToJson(schemas);
-            write("_schema", json.getBytes(StandardCharsets.UTF_8));
-        } finally { lock.writeLock().unlock(); }
+            // Convert schemas map to table_schema table rows
+            List<Map<String, Object>> schemaRows = new ArrayList<>();
+            
+            for (Map.Entry<String, Set<String>> entry : schemas.entrySet()) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("table_name", entry.getKey());
+                // Store columns as comma-separated string
+                row.put("columns", String.join(",", entry.getValue()));
+                schemaRows.add(row);
+            }
+            
+            // Save as table_schema table
+            saveTable("table_schema", schemaRows);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -262,18 +308,17 @@ public class JsonStorageEngine implements StorageEngine {
     public void deleteTable(String tableName) {
 
         lock.writeLock().lock();
-        try { delete("table_" + tableName); }
-        finally { lock.writeLock().unlock(); }
+        try {
+            // Don't double-prefix table_schema
+            String key = tableName.startsWith("table_") ? tableName : "table_" + tableName;
+            delete(key);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
-    // JSON serialization/deserialization
+    // JSON serialization
 
-    /**
-     * Serializes table data to a JSON string.
-     * @param tableName the name of the table
-     * @param rows the list of rows
-     * @return the JSON string representation of the table data
-     */
     private String serializeTableToJson(String tableName, List<Map<String, Object>> rows) {
 
         var json = new StringBuilder();
@@ -298,30 +343,6 @@ public class JsonStorageEngine implements StorageEngine {
         }
         
         json.append("]}");
-        return json.toString();
-    }
-
-    /**
-     * Serializes schema information to a JSON string.
-     * @param schemas map of table name to column names
-     * @return the JSON string representation of the schemas
-     */
-    private String serializeSchemasToJson(Map<String, Set<String>> schemas) {
-
-        var json = new StringBuilder();
-        json.append("{\"tables\":{");
-        
-        var tableIndex = 0;
-        for (var entry : schemas.entrySet()) {
-
-            if (tableIndex > 0) json.append(",");
-            json.append("\"").append(entry.getKey()).append("\":[\"")
-                .append(String.join("\",\"", entry.getValue()))
-                .append("\"]");
-            tableIndex++;
-        }
-        
-        json.append("}}");
         return json.toString();
     }
 
@@ -365,74 +386,5 @@ public class JsonStorageEngine implements StorageEngine {
         }
         
         return rows;
-    }
-
-    /**
-     * Parses table names from a JSON string.
-     * @param json the JSON string representation of the schemas
-     * @return the set of table names
-     */
-    private Set<String> parseTableNamesFromJson(String json) {
-
-        var tableNames = new HashSet<String>();
-        
-        var tablesStart = json.indexOf("{\"tables\":{") + 11;
-        var tablesEnd = json.lastIndexOf("}");
-        
-        if (tablesStart < 11 || tablesEnd <= tablesStart) return tableNames;
-        
-        var tablesJson = json.substring(tablesStart, tablesEnd);
-        var tableArray = tablesJson.split(",(?=\")");
-        
-        for (var tableStr : tableArray) {
-            
-            var colonIndex = tableStr.indexOf(":");
-            if (colonIndex > 0) {
-
-                var tableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
-                tableNames.add(tableName);
-            }
-        }
-        
-        return tableNames;
-    }
-
-    /**
-     * Parses table schema from a JSON string.
-     * @param json the JSON string representation of the schemas
-     * @param tableName the table name to extract schema for
-     * @return the set of column names
-     */
-    private Set<String> parseTableSchemaFromJson(String json, String tableName) {
-
-        var columns = new HashSet<String>();
-        
-        var tablesStart = json.indexOf("{\"tables\":{") + 11;
-        var tablesEnd = json.lastIndexOf("}");
-        
-        if (tablesStart < 11 || tablesEnd <= tablesStart) return columns;
-        
-        var tablesJson = json.substring(tablesStart, tablesEnd);
-        var tableArray = tablesJson.split(",(?=\")");
-        
-        for (var tableStr : tableArray) {
-            
-            var colonIndex = tableStr.indexOf(":");
-            if (colonIndex > 0) {
-
-                var currentTableName = tableStr.substring(0, colonIndex).replace("\"", "").trim();
-                if (currentTableName.equals(tableName)) {
-
-                    var columnsStr = tableStr.substring(colonIndex + 1)
-                        .replace("[", "").replace("]", "").replace("\"", "").trim();
-                    
-                    if (!columnsStr.isEmpty())
-                        for (var col : columnsStr.split(",")) columns.add(col.trim());
-                    break;
-                }
-            }
-        }
-        
-        return columns;
     }
 }

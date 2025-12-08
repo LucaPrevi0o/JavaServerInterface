@@ -4,7 +4,6 @@ import jsi.connection.database.QueryCondition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * MySQL-specific implementation of QueryCondition.
@@ -12,7 +11,45 @@ import java.util.regex.Matcher;
  */
 public class MySqlQueryCondition extends QueryCondition {
     
+    /**
+     * Enum representing comparison operators for simple conditions.
+     */
+    public enum ComparisonOperator {
+
+        EQUALS("="),
+        NOT_EQUALS("!="),
+        GREATER_THAN(">"),
+        LESS_THAN("<"),
+        GREATER_THAN_OR_EQUAL(">="),
+        LESS_THAN_OR_EQUAL("<="),
+        LIKE("LIKE"),
+        IN("IN"),
+        IS_NULL("IS NULL"),
+        IS_NOT_NULL("IS NOT NULL");
+        
+        private final String sqlOperator;
+        
+        /**
+         * Constructor for ComparisonOperator.
+         * @param sqlOperator the SQL representation of the operator
+         */
+        ComparisonOperator(String sqlOperator) { this.sqlOperator = sqlOperator; }
+        
+        /**
+         * Get the SQL representation of the operator.
+         * @return the SQL operator as a string
+         */
+        public String getSqlOperator() { return sqlOperator; }
+    }
+    
+    protected ComparisonOperator comparisonOperator;
     public static final MySqlQueryCondition EMPTY = new MySqlQueryCondition();
+
+    /**
+     * Get the comparison operator for simple conditions.
+     * @return the ComparisonOperator
+     */
+    public ComparisonOperator getComparisonOperator() { return comparisonOperator; }
     
     /**
      * Creates an empty MySqlQueryCondition.
@@ -21,135 +58,286 @@ public class MySqlQueryCondition extends QueryCondition {
     
     /**
      * Creates a simple MySqlQueryCondition.
+     * @param fieldName the field name
+     * @param operator the comparison operator
+     * @param value the value to compare against
      */
     public MySqlQueryCondition(String fieldName, ComparisonOperator operator, Object value) {
-        super(fieldName, operator, value);
+
+        super(fieldName, value);
+        this.comparisonOperator = operator;
     }
     
     /**
      * Creates a complex MySqlQueryCondition.
+     * @param operator the logical operator
+     * @param conditions the sub-conditions to combine
      */
-    public MySqlQueryCondition(LogicalOperator operator, QueryCondition... conditions) {
-        super(operator, conditions);
-    }
+    public MySqlQueryCondition(LogicalOperator operator, QueryCondition... conditions) { super(operator, conditions); }
     
     // ===== Implementation of abstract factory methods =====
     
+    /**
+     * Creates an EQUALS condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the EQUALS condition
+     */
     @Override
-    protected QueryCondition createEquals(String fieldName, Object value) {
+    protected MySqlQueryCondition createEquals(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.EQUALS, value);
     }
     
+    /**
+     * Creates a NOT_EQUALS condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the NOT_EQUALS condition
+     */
     @Override
-    protected QueryCondition createNotEquals(String fieldName, Object value) {
+    protected MySqlQueryCondition createNotEquals(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.NOT_EQUALS, value);
     }
     
+    /**
+     * Creates a GREATER_THAN condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the GREATER_THAN condition
+     */
     @Override
-    protected QueryCondition createGreaterThan(String fieldName, Object value) {
+    protected MySqlQueryCondition createGreaterThan(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.GREATER_THAN, value);
     }
     
+    /**
+     * Creates a LESS_THAN condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the LESS_THAN condition
+     */
     @Override
-    protected QueryCondition createLessThan(String fieldName, Object value) {
+    protected MySqlQueryCondition createLessThan(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LESS_THAN, value);
     }
     
+    /**
+     * Creates a GREATER_THAN_OR_EQUAL condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the GREATER_THAN_OR_EQUAL condition
+     */
     @Override
-    protected QueryCondition createGreaterThanOrEqual(String fieldName, Object value) {
+    protected MySqlQueryCondition createGreaterThanOrEqual(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.GREATER_THAN_OR_EQUAL, value);
     }
     
+    /**
+     * Creates a LESS_THAN_OR_EQUAL condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the LESS_THAN_OR_EQUAL condition
+     */
     @Override
-    protected QueryCondition createLessThanOrEqual(String fieldName, Object value) {
+    protected MySqlQueryCondition createLessThanOrEqual(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LESS_THAN_OR_EQUAL, value);
     }
     
+    /**
+     * Creates a LIKE condition.
+     * @param fieldName the field name
+     * @param pattern the pattern to match
+     * @return a MySqlQueryCondition representing the LIKE condition
+     */
     @Override
-    protected QueryCondition createLike(String fieldName, String pattern) {
+    protected MySqlQueryCondition createLike(String fieldName, String pattern) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LIKE, pattern);
     }
     
+    /**
+     * Creates an IN condition.
+     * @param fieldName the field name
+     * @param values the values to check for inclusion
+     * @return a MySqlQueryCondition representing the IN condition
+     */
     @Override
-    protected QueryCondition createIn(String fieldName, Object... values) {
+    protected MySqlQueryCondition createIn(String fieldName, Object... values) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IN, values);
     }
     
+    /**
+     * Creates an IS_NULL condition.
+     * @param fieldName the field name
+     * @return a MySqlQueryCondition representing the IS_NULL condition
+     */
     @Override
-    protected QueryCondition createIsNull(String fieldName) {
+    protected MySqlQueryCondition createIsNull(String fieldName) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IS_NULL, null);
     }
     
+    /**
+     * Creates an IS_NOT_NULL condition.
+     * @param fieldName the field name
+     * @return a MySqlQueryCondition representing the IS_NOT_NULL condition
+     */
     @Override
-    protected QueryCondition createIsNotNull(String fieldName) {
+    protected MySqlQueryCondition createIsNotNull(String fieldName) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IS_NOT_NULL, null);
     }
     
+    /**
+     * Creates an AND condition.
+     * @param conditions the conditions to combine with AND
+     * @return a MySqlQueryCondition representing the AND condition
+     */
     @Override
-    protected QueryCondition createAnd(QueryCondition... conditions) {
+    protected MySqlQueryCondition createAnd(QueryCondition... conditions) {
         return new MySqlQueryCondition(LogicalOperator.AND, conditions);
     }
     
+    /**
+     * Creates an OR condition.
+     * @param conditions the conditions to combine with OR
+     * @return a MySqlQueryCondition representing the OR condition
+     */
     @Override
-    protected QueryCondition createOr(QueryCondition... conditions) {
+    protected MySqlQueryCondition createOr(QueryCondition... conditions) {
         return new MySqlQueryCondition(LogicalOperator.OR, conditions);
     }
     
+    /**
+     * Creates a NOT condition.
+     * @param condition the condition to negate
+     * @return a MySqlQueryCondition representing the NOT condition
+     */
     @Override
-    protected QueryCondition createNot(QueryCondition condition) {
+    protected MySqlQueryCondition createNot(QueryCondition condition) {
         return new MySqlQueryCondition(LogicalOperator.NOT, condition);
     }
     
     // ===== Static factory methods for convenient usage =====
     
+    /**
+     * Creates an EQUALS condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the EQUALS condition
+     */
     public static MySqlQueryCondition equals(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.EQUALS, value);
     }
     
+    /**
+     * Creates a NOT_EQUALS condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the NOT_EQUALS condition
+     */
     public static MySqlQueryCondition notEquals(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.NOT_EQUALS, value);
     }
     
+    /**
+     * Creates a GREATER_THAN condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the GREATER_THAN condition
+     */
     public static MySqlQueryCondition greaterThan(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.GREATER_THAN, value);
     }
     
+    /**
+     * Creates a LESS_THAN condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the LESS_THAN condition
+     */
     public static MySqlQueryCondition lessThan(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LESS_THAN, value);
     }
     
+    /**
+     * Creates a GREATER_THAN_OR_EQUAL condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the GREATER_THAN_OR_EQUAL condition
+     */
     public static MySqlQueryCondition greaterThanOrEqual(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.GREATER_THAN_OR_EQUAL, value);
     }
     
+    /**
+     * Creates a LESS_THAN_OR_EQUAL condition.
+     * @param fieldName the field name
+     * @param value the value to compare against
+     * @return a MySqlQueryCondition representing the LESS_THAN_OR_EQUAL condition
+     */
     public static MySqlQueryCondition lessThanOrEqual(String fieldName, Object value) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LESS_THAN_OR_EQUAL, value);
     }
     
+    /**
+     * Creates a LIKE condition.
+     * @param fieldName the field name
+     * @param pattern the pattern to match
+     * @return a MySqlQueryCondition representing the LIKE condition
+     */
     public static MySqlQueryCondition like(String fieldName, String pattern) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.LIKE, pattern);
     }
     
+    /**
+     * Creates an IN condition.
+     * @param fieldName the field name
+     * @param values the values to check for inclusion
+     * @return a MySqlQueryCondition representing the IN condition
+     */
     public static MySqlQueryCondition in(String fieldName, Object... values) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IN, values);
     }
     
+    /**
+     * Creates an IS_NULL condition.
+     * @param fieldName the field name
+     * @return a MySqlQueryCondition representing the IS_NULL condition
+     */
     public static MySqlQueryCondition isNull(String fieldName) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IS_NULL, null);
     }
     
+    /**
+     * Creates an IS_NOT_NULL condition.
+     * @param fieldName the field name
+     * @return a MySqlQueryCondition representing the IS_NOT_NULL condition
+     */
     public static MySqlQueryCondition isNotNull(String fieldName) {
         return new MySqlQueryCondition(fieldName, ComparisonOperator.IS_NOT_NULL, null);
     }
-    
+
+    /**
+     * Creates an AND condition.
+     * @param conditions the conditions to combine with AND
+     * @return a MySqlQueryCondition representing the AND condition
+     */
     public static MySqlQueryCondition and(QueryCondition... conditions) {
         return new MySqlQueryCondition(LogicalOperator.AND, conditions);
     }
     
+    /**
+     * Creates an OR condition.
+     * @param conditions the conditions to combine with OR
+     * @return a MySqlQueryCondition representing the OR condition
+     */
     public static MySqlQueryCondition or(QueryCondition... conditions) {
         return new MySqlQueryCondition(LogicalOperator.OR, conditions);
     }
     
+    /**
+     * Creates a NOT condition.
+     * @param condition the condition to negate
+     * @return a MySqlQueryCondition representing the NOT condition
+     */
     public static MySqlQueryCondition not(QueryCondition condition) {
         return new MySqlQueryCondition(LogicalOperator.NOT, condition);
     }
@@ -165,9 +353,7 @@ public class MySqlQueryCondition extends QueryCondition {
      */
     public static MySqlQueryCondition parse(String whereClause) {
         
-        if (whereClause == null || whereClause.trim().isEmpty()) {
-            return EMPTY;
-        }
+        if (whereClause == null || whereClause.trim().isEmpty()) return EMPTY;
         
         whereClause = whereClause.trim();
         
@@ -175,22 +361,20 @@ public class MySqlQueryCondition extends QueryCondition {
         whereClause = removeOuterParentheses(whereClause);
         
         // Try to split by OR (lowest precedence)
-        List<String> orParts = splitByOperator(whereClause, "OR");
+        var orParts = splitByOperator(whereClause, "OR");
         if (orParts.size() > 1) {
-            QueryCondition[] conditions = new QueryCondition[orParts.size()];
-            for (int i = 0; i < orParts.size(); i++) {
-                conditions[i] = parse(orParts.get(i));
-            }
+
+            var conditions = new QueryCondition[orParts.size()];
+            for (var i = 0; i < orParts.size(); i++) conditions[i] = parse(orParts.get(i));
             return or(conditions);
         }
         
         // Try to split by AND (higher precedence than OR)
-        List<String> andParts = splitByOperator(whereClause, "AND");
+        var andParts = splitByOperator(whereClause, "AND");
         if (andParts.size() > 1) {
-            QueryCondition[] conditions = new QueryCondition[andParts.size()];
-            for (int i = 0; i < andParts.size(); i++) {
-                conditions[i] = parse(andParts.get(i));
-            }
+
+            var conditions = new QueryCondition[andParts.size()];
+            for (var i = 0; i < andParts.size(); i++) conditions[i] = parse(andParts.get(i));
             return and(conditions);
         }
         
@@ -200,23 +384,20 @@ public class MySqlQueryCondition extends QueryCondition {
     
     /**
      * Remove outer parentheses from a string if they wrap the entire expression.
+     * @param str the input string
+     * @return the string without outer parentheses
      */
     private static String removeOuterParentheses(String str) {
         
         str = str.trim();
+        if (!str.startsWith("(") || !str.endsWith(")")) return str;
         
-        if (!str.startsWith("(") || !str.endsWith(")")) {
-            return str;
-        }
-        
-        int depth = 0;
-        for (int i = 0; i < str.length(); i++) {
+        var depth = 0;
+        for (var i = 0; i < str.length(); i++) {
+
             if (str.charAt(i) == '(') depth++;
             else if (str.charAt(i) == ')') depth--;
-            
-            if (depth == 0 && i < str.length() - 1) {
-                return str;
-            }
+            if (depth == 0 && i < str.length() - 1) return str;
         }
         
         return removeOuterParentheses(str.substring(1, str.length() - 1));
@@ -224,42 +405,44 @@ public class MySqlQueryCondition extends QueryCondition {
     
     /**
      * Split a string by a logical operator (AND/OR) while respecting parentheses.
+     * @param str the input string
+     * @param operator the logical operator to split by ("AND" or "OR")
+     * @return list of split parts
      */
     private static List<String> splitByOperator(String str, String operator) {
         
-        List<String> parts = new ArrayList<>();
-        int depth = 0;
-        int lastSplit = 0;
+        var parts = new ArrayList<String>();
+        var depth = 0;
+        var lastSplit = 0;
         
-        Pattern pattern = Pattern.compile("\\b" + operator + "\\b", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(str);
+        var pattern = Pattern.compile("\\b" + operator + "\\b", Pattern.CASE_INSENSITIVE);
+        var matcher = pattern.matcher(str);
         
         while (matcher.find()) {
+
             depth = 0;
-            for (int i = lastSplit; i < matcher.start(); i++) {
+            for (var i = lastSplit; i < matcher.start(); i++) {
+
                 if (str.charAt(i) == '(') depth++;
                 else if (str.charAt(i) == ')') depth--;
             }
             
             if (depth == 0) {
+
                 parts.add(str.substring(lastSplit, matcher.start()).trim());
                 lastSplit = matcher.end();
             }
         }
         
-        if (lastSplit < str.length()) {
-            parts.add(str.substring(lastSplit).trim());
-        }
-        
-        if (parts.isEmpty()) {
-            parts.add(str);
-        }
-        
+        if (lastSplit < str.length()) parts.add(str.substring(lastSplit).trim());
+        if (parts.isEmpty()) parts.add(str);
         return parts;
     }
     
     /**
      * Parse a simple condition (e.g., "age > 18", "name = 'John'").
+     * @param condition the simple condition string
+     * @return a MySqlQueryCondition representing the simple condition
      */
     private static MySqlQueryCondition parseSimpleCondition(String condition) {
         
@@ -267,49 +450,54 @@ public class MySqlQueryCondition extends QueryCondition {
         
         // Check for IS NOT NULL
         if (Pattern.compile("\\bIS\\s+NOT\\s+NULL\\b", Pattern.CASE_INSENSITIVE).matcher(condition).find()) {
-            String field = condition.replaceAll("(?i)\\s+IS\\s+NOT\\s+NULL.*", "").trim();
+
+            var field = condition.replaceAll("(?i)\\s+IS\\s+NOT\\s+NULL.*", "").trim();
             return isNotNull(field);
         }
         
         // Check for IS NULL
         if (Pattern.compile("\\bIS\\s+NULL\\b", Pattern.CASE_INSENSITIVE).matcher(condition).find()) {
-            String field = condition.replaceAll("(?i)\\s+IS\\s+NULL.*", "").trim();
+
+            var field = condition.replaceAll("(?i)\\s+IS\\s+NULL.*", "").trim();
             return isNull(field);
         }
         
         // Check for LIKE
-        Pattern likePattern = Pattern.compile("(.+?)\\s+LIKE\\s+(.+)", Pattern.CASE_INSENSITIVE);
-        Matcher likeMatcher = likePattern.matcher(condition);
+        var likePattern = Pattern.compile("(.+?)\\s+LIKE\\s+(.+)", Pattern.CASE_INSENSITIVE);
+        var likeMatcher = likePattern.matcher(condition);
         if (likeMatcher.matches()) {
-            String field = likeMatcher.group(1).trim();
-            String value = cleanValue(likeMatcher.group(2).trim());
+
+            var field = likeMatcher.group(1).trim();
+            var value = cleanValue(likeMatcher.group(2).trim());
             return like(field, value);
         }
         
         // Check for IN
-        Pattern inPattern = Pattern.compile("(.+?)\\s+IN\\s+\\((.+?)\\)", Pattern.CASE_INSENSITIVE);
-        Matcher inMatcher = inPattern.matcher(condition);
+        var inPattern = Pattern.compile("(.+?)\\s+IN\\s+\\((.+?)\\)", Pattern.CASE_INSENSITIVE);
+        var inMatcher = inPattern.matcher(condition);
         if (inMatcher.matches()) {
-            String field = inMatcher.group(1).trim();
-            String valuesList = inMatcher.group(2).trim();
-            String[] values = valuesList.split(",");
-            Object[] parsedValues = new Object[values.length];
-            for (int i = 0; i < values.length; i++) {
-                parsedValues[i] = parseValue(values[i].trim());
-            }
+
+            var field = inMatcher.group(1).trim();
+            var valuesList = inMatcher.group(2).trim();
+            var values = valuesList.split(",");
+            var parsedValues = new Object[values.length];
+            for (var i = 0; i < values.length; i++) parsedValues[i] = parseValue(values[i].trim());
             return in(field, parsedValues);
         }
         
         // Check for comparison operators
-        String[] operators = {">=", "<=", "!=", "<>", "=", ">", "<"};
-        for (String op : operators) {
-            int index = condition.indexOf(op);
+        var operators = new String[]{">=", "<=", "!=", "<>", "=", ">", "<"};
+        for (var op : operators) {
+
+            var index = condition.indexOf(op);
             if (index > 0) {
-                String field = condition.substring(0, index).trim();
-                String valueStr = condition.substring(index + op.length()).trim();
-                Object value = parseValue(valueStr);
+
+                var field = condition.substring(0, index).trim();
+                var valueStr = condition.substring(index + op.length()).trim();
+                var value = parseValue(valueStr);
                 
                 switch (op) {
+
                     case ">=": return greaterThanOrEqual(field, value);
                     case "<=": return lessThanOrEqual(field, value);
                     case "!=":
@@ -337,11 +525,8 @@ public class MySqlQueryCondition extends QueryCondition {
         }
         
         try {
-            if (valueStr.contains(".")) {
-                return Double.parseDouble(valueStr);
-            } else {
-                return Integer.parseInt(valueStr);
-            }
+            if (valueStr.contains(".")) return Double.parseDouble(valueStr);
+            else return Integer.parseInt(valueStr);
         } catch (NumberFormatException e) {
             // Not a number
         }
@@ -357,6 +542,7 @@ public class MySqlQueryCondition extends QueryCondition {
      * Clean a value string by removing quotes.
      */
     private static String cleanValue(String value) {
+
         value = value.trim();
         if ((value.startsWith("'") && value.endsWith("'")) ||
             (value.startsWith("\"") && value.endsWith("\""))) {

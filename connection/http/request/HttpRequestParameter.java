@@ -9,14 +9,14 @@ import jsi.request.RequestParameter;
 public class HttpRequestParameter implements RequestParameter {
 
     private final String name;
-    private final String value;
+    private final Object value;
 
     /**
      * Constructor for HttpRequestParameter.
      * @param name the name of the HTTP request parameter
      * @param value the value of the HTTP request parameter
      */
-    public HttpRequestParameter(String name, String value) {
+    public HttpRequestParameter(String name, Object value) {
 
         this.name = name;
         this.value = value;
@@ -34,6 +34,5 @@ public class HttpRequestParameter implements RequestParameter {
      * @return the value of the request parameter
      */
     @Override
-    public String getValue() { return value; }
-    
+    public Object getValue() { return value; }
 }

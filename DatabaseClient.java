@@ -13,14 +13,5 @@ public abstract class DatabaseClient extends ConnectionClient {
      * @param query the Query object to execute
      * @return the QueryResult from the server
      */
-    public QueryResult executeQuery(Query query) {
-        return (QueryResult) getResponse(query);
-    }
-
-    /**
-     * Execute a raw query string on the database server.
-     * @param queryString the SQL query string
-     * @return the QueryResult from the server
-     */
-    public abstract QueryResult executeQuery(String queryString);
+    public QueryResult executeQuery(Query<?> query) { return (QueryResult) getResponse(query); }
 }

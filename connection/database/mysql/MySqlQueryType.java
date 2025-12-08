@@ -1,26 +1,42 @@
 package jsi.connection.database.mysql;
 
+import jsi.connection.database.OperationType;
 import jsi.connection.database.QueryType;
 
-public enum MySqlQueryType {
+public enum MySqlQueryType implements QueryType {
     
-    SELECT(QueryType.READ, "SELECT"),
-    INSERT(QueryType.CREATE, "INSERT"),
-    UPDATE(QueryType.UPDATE, "UPDATE"),
-    DELETE(QueryType.DELETE, "DELETE"),
-    CREATE(QueryType.CREATE, "CREATE"),
-    DROP(QueryType.CREATE, "DROP"),
-    ALTER(QueryType.CREATE, "ALTER");
+    SELECT(OperationType.READ, "SELECT"),
+    SHOW(OperationType.READ, "SHOW"),
+    INSERT(OperationType.CREATE, "INSERT"),
+    UPDATE(OperationType.UPDATE, "UPDATE"),
+    DELETE(OperationType.DELETE, "DELETE"),
+    CREATE(OperationType.CREATE, "CREATE"),
+    DROP(OperationType.CREATE, "DROP"),
+    ALTER(OperationType.CREATE, "ALTER");
 
     private final String sqlKeyword;
-    private final QueryType queryCategory;
+    private final OperationType queryCategory;
 
-    MySqlQueryType(QueryType queryCategory, String sqlKeyword) {
+    /**
+     * Constructor for MySqlQueryType.
+     * @param queryCategory the category of the query
+     * @param sqlKeyword the SQL keyword representing the query type
+     */
+    MySqlQueryType(OperationType queryCategory, String sqlKeyword) {
         
         this.queryCategory = queryCategory;
         this.sqlKeyword = sqlKeyword;
     }
 
+    /**
+     * Get the SQL keyword for the query type.
+     * @return the SQL keyword
+     */
     public String getSqlKeyword() { return sqlKeyword; }
-    public QueryType getQueryCategory() { return queryCategory; }
+
+    /**
+     * Get the category of the query.
+     * @return the QueryType
+     */
+    public OperationType getOperationType() { return queryCategory; }
 }
