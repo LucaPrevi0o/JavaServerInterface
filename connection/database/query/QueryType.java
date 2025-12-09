@@ -1,4 +1,4 @@
-package jsi.connection.database;
+package jsi.connection.database.query;
 
 /**
  * Interface representing the type of a database query.

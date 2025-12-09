@@ -2,6 +2,8 @@ package jsi.connection.database;
 
 import java.util.List;
 
+import jsi.connection.database.query.QueryCondition;
+
 /**
  * Interface for storage engines that handle persistence and caching.
  * Implementations are responsible for serialization, caching, and file I/O.

@@ -1,6 +1,6 @@
 package jsi;
-import jsi.connection.database.Query;
-import jsi.connection.database.QueryResult;
+import jsi.connection.database.query.Query;
+import jsi.connection.database.query.QueryResult;
 
 /**
  * Abstract class representing a database client.

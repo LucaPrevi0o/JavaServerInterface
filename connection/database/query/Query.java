@@ -1,6 +1,8 @@
-package jsi.connection.database;
+package jsi.connection.database.query;
 
 import jsi.Request;
+import jsi.connection.database.Field;
+
 import java.util.List;
 
 /**
@@ -21,25 +23,25 @@ public abstract class Query implements Request {
      * Get the type of the query.
      * @return the query type
      */
-    protected abstract QueryType getQueryType();
+    public abstract QueryType getQueryType();
 
     /**
      * Get the target collection for the query.
      * @return the target collection
      */
-    protected abstract String getTargetCollection();
+    public abstract String getTargetCollection();
 
     /**
      * Get the fields affected by the query.
      * @return the list of affected fields
      */
-    protected abstract List<Field> getAffectedFields();
+    public abstract List<Field> getAffectedFields();
 
     /**
      * Get the where condition for the query.
      * @return the where condition
      */
-    protected abstract QueryCondition getCondition();
+    public abstract QueryCondition getCondition();
     
     /**
      * Serialize the request into a string format.

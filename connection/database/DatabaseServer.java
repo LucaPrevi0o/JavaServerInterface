@@ -2,6 +2,8 @@ package jsi.connection.database;
 
 import jsi.Request;
 import jsi.connection.ConnectionServer;
+import jsi.connection.database.query.Query;
+import jsi.connection.database.query.QueryResult;
 
 /**
  * Abstract class representing a database server.

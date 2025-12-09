@@ -1,6 +1,8 @@
 package jsi.connection.database;
 
-import jsi.connection.database.QueryType.OperationType;
+import jsi.connection.database.query.Query;
+import jsi.connection.database.query.QueryResult;
+import jsi.connection.database.query.QueryType.OperationType;
 
 /**
  * Interface representing a database engine.

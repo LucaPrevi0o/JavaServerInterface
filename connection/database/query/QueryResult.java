@@ -1,8 +1,9 @@
-package jsi.connection.database;
+package jsi.connection.database.query;
 
 import java.util.List;
 
 import jsi.Response;
+import jsi.connection.database.Field;
 
 /**
  * Class representing the result of a database query.
@@ -16,6 +17,9 @@ public class QueryResult implements Response {
 
     /**
      * Constructor for QueryResult.
+     * @param success indicates if the query was successful
+     * @param message the message associated with the result
+     * @param data the data returned by the query
      */
     public QueryResult(boolean success, String message, List<Field> data) {
 
@@ -43,7 +47,7 @@ public class QueryResult implements Response {
     public List<Field> getData() { return data; }
 
     /**  
-     * * Serializes the QueryResult into a string format for transmission.
+     * Serializes the QueryResult into a string format for transmission.
      * Uses a single-line format with pipe separators for network transmission.
      * Format: STATUS|MESSAGE|ROW_COUNT|DATA
      * @return the serialized string representation of the QueryResult

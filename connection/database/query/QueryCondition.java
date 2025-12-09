@@ -1,4 +1,4 @@
-package jsi.connection.database;
+package jsi.connection.database.query;
 
 import java.util.ArrayList;
 import java.util.List;
