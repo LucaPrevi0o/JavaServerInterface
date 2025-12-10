@@ -1,6 +1,5 @@
 package jsi.connection.database.query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,11 +27,6 @@ public abstract class QueryCondition {
     protected List<QueryCondition> subConditions;
     
     /**
-     * Creates an empty QueryCondition.
-     */
-    protected QueryCondition() { this.subConditions = new ArrayList<>(); }
-    
-    /**
      * Creates a simple condition with a field, operator, and value.
      * 
      * @param fieldName the name of the field to compare
@@ -43,7 +37,6 @@ public abstract class QueryCondition {
 
         this.fieldName = fieldName;
         this.value = value;
-        this.subConditions = new ArrayList<>();
     }
     
     /**
@@ -55,9 +48,7 @@ public abstract class QueryCondition {
     protected QueryCondition(LogicalOperator operator, QueryCondition... conditions) {
 
         this.logicalOperator = operator;
-        this.subConditions = new ArrayList<>();
-        for (var condition : conditions)
-            if (condition != null) this.subConditions.add(condition);
+        this.subConditions = List.of(conditions);
     }
     
     /**
@@ -230,11 +221,15 @@ public abstract class QueryCondition {
     
     /**
      * Chains this condition with another using AND.
+     * @param other the other QueryCondition to combine with
+     * @return the combined QueryCondition
      */
     public QueryCondition and(QueryCondition other) { return createAnd(this, other); }
     
     /**
      * Chains this condition with another using OR.
+     * @param other the other QueryCondition to combine with
+     * @return the combined QueryCondition
      */
     public QueryCondition or(QueryCondition other) { return createOr(this, other); }
     
