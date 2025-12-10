@@ -47,7 +47,12 @@ public class MySqlEngine extends DatabaseEngine {
 
         if (query instanceof MySqlQuery mySqlQuery) {
         
-            if (!inTransaction) return super.execute(mySqlQuery);
+            if (!inTransaction) {
+
+                // Handle CREATE TABLE outside of transactions
+                if (mySqlQuery.getQueryType() == MySqlQueryType.CREATE) return handleCreateTable(mySqlQuery);
+                return super.execute(mySqlQuery);
+            }
             
             // During transaction: buffer operations
             var type = mySqlQuery.getQueryType();
@@ -70,7 +75,7 @@ public class MySqlEngine extends DatabaseEngine {
                     var results = new ArrayList<>(snapshotCache.get(collection));
                     if (condition != null) results.removeIf(record -> !matchesCondition(record, condition));
                     return new QueryResult(true, "Read operation successful (from transaction snapshot).", results);
-                } else if (type == MySqlQueryType.INSERT || type == MySqlQueryType.CREATE || type == MySqlQueryType.UPDATE || type == MySqlQueryType.ALTER) {
+                } else if (type == MySqlQueryType.INSERT || type == MySqlQueryType.UPDATE) {
                     
                     var affectedFields = mySqlQuery.getAffectedFields();
                     transactionBuffer.add(new TransactionOperation(OperationType.WRITE, collection, affectedFields, null));
@@ -91,6 +96,23 @@ public class MySqlEngine extends DatabaseEngine {
                 
             } catch (Exception e) { return new QueryResult(false, "Transaction operation failed: " + e.getMessage(), null); }
         } else throw new IllegalArgumentException("Invalid query type: Expected MySqlQuery.");
+    }
+
+    /**
+     * Handle CREATE TABLE operation.
+     * Creates a new collection file if it doesn't exist.
+     * @param query the CREATE TABLE query
+     * @return the QueryResult of the operation
+     */
+    private QueryResult handleCreateTable(MySqlQuery query) {
+        
+        try {
+
+            var collection = query.getTargetCollection();
+            getStorageEngine().createCollection(collection);
+            return new QueryResult(true, "Collection created: " + collection + ".", null);
+        } catch (IllegalStateException e) { return new QueryResult(false, "Collection already exists.", null); }
+        catch (IOException e) { return new QueryResult(false, "Failed to create collection: " + e.getMessage(), null); }
     }
 
     /**

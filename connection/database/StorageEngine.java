@@ -26,6 +26,31 @@ public abstract class StorageEngine {
     public StorageEngine(String storagePath) { this.storagePath = storagePath; }
 
     /**
+     * Create a new collection.
+     * Creates an empty JSON array file for the collection.
+     * @param collection the name of the collection to create
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalStateException if the collection already exists
+     */
+    public void createCollection(String collection) throws IOException {
+        
+        var filePath = getCollectionPath(collection);
+        var file = new File(filePath);
+        
+        // Verifica che il file non esista già
+        if (file.exists()) throw new IllegalStateException("Collection already exists: " + collection + ".");
+        
+        // Crea la directory se non esiste
+        var parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) parentDir.mkdirs();
+        
+        // Crea un file vuoto con un array JSON vuoto
+        var writer = new BufferedWriter(new FileWriter(file));
+        writer.write("[\n]\n");
+        writer.close();
+    }
+
+    /**
      * Write data to the storage.
      * Appends a new record to the collection file.
      * @param collection the target collection

@@ -58,9 +58,9 @@ public final class MySqlFieldsExtractor {
 
     /**
      * Extract fields from INSERT query.
-     * Pattern: INSERT INTO table (col1, col2, col3) VALUES (...)
+     * Pattern: INSERT INTO table (col1, col2, col3) VALUES (val1, val2, val3)
      * @param query the normalized query string
-     * @return list of Field objects (with null values)
+     * @return list of Field objects with values
      */
     private static List<Field> extractInsertFields(String query) {
 
@@ -70,7 +70,70 @@ public final class MySqlFieldsExtractor {
         if (leftParen == -1 || rightParen == -1) return new ArrayList<>();
 
         var columnsPart = query.substring(leftParen + 1, rightParen).trim();
-        return parseColumnNames(columnsPart);
+        var columnNames = parseColumnNames(columnsPart);
+        
+        // Find VALUES clause
+        var valuesIndex = query.toUpperCase().indexOf(" VALUES ");
+        if (valuesIndex == -1) return columnNames; // No values, return columns with null
+        
+        // Extract values part
+        var afterValues = query.substring(valuesIndex + 8).trim();
+        var valuesLeftParen = afterValues.indexOf("(");
+        var valuesRightParen = afterValues.indexOf(")");
+        
+        if (valuesLeftParen == -1 || valuesRightParen == -1) return columnNames;
+        
+        var valuesPart = afterValues.substring(valuesLeftParen + 1, valuesRightParen).trim();
+        var values = parseValues(valuesPart);
+        
+        // Combine column names with values
+        var fields = new ArrayList<Field>();
+        for (var i = 0; i < columnNames.size(); i++) {
+
+            var columnName = columnNames.get(i).getName();
+            var value = i < values.length ? values[i] : null;
+            fields.add(new Field(columnName, value));
+        }
+        
+        return fields;
+    }
+    
+    /**
+     * Parse comma-separated values, respecting quoted strings.
+     * @param valuesPart the string containing values
+     * @return array of parsed values
+     */
+    private static Object[] parseValues(String valuesPart) {
+        
+        var values = new ArrayList<Object>();
+        var current = new StringBuilder();
+        var inQuote = false;
+        var quoteChar = '\0';
+        
+        for (int i = 0; i < valuesPart.length(); i++) {
+            var ch = valuesPart.charAt(i);
+            
+            if (!inQuote && (ch == '"' || ch == '\'')) {
+                inQuote = true;
+                quoteChar = ch;
+                current.append(ch);
+            } else if (inQuote && ch == quoteChar) {
+                inQuote = false;
+                current.append(ch);
+            } else if (!inQuote && ch == ',') {
+                values.add(MySqlValueParser.parseValue(current.toString().trim()));
+                current = new StringBuilder();
+            } else {
+                current.append(ch);
+            }
+        }
+        
+        // Add last value
+        if (current.length() > 0) {
+            values.add(MySqlValueParser.parseValue(current.toString().trim()));
+        }
+        
+        return values.toArray();
     }
 
     /**
