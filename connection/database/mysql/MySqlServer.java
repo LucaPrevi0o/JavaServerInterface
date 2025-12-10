@@ -28,9 +28,11 @@ public class MySqlServer extends DatabaseServer {
         throw new IllegalArgumentException("Invalid request type: Expected MySqlQuery.");
     }
 
+    /**
+     * Parse the incoming request string into a MySqlQuery.
+     * @param input the raw request string
+     * @return the parsed MySqlQuery
+     */
     @Override
-    protected Request parseRequest(String input) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'parseRequest'");
-    }
+    protected Request parseRequest(String input) { return new MySqlQuery(input); }
 }
