@@ -33,11 +33,12 @@ public abstract class DatabaseServer extends ConnectionServer {
      * Handle incoming requests and execute database queries.
      * @param query the incoming Request
      * @return the QueryResult from executing the query
+     * @throws IllegalArgumentException if the request is not a Query
      */
     @Override
     public QueryResult handleRequest(Request query) {
 
         if (query instanceof Query q) return databaseEngine.execute(q);
-        return null;
+        throw new IllegalArgumentException("Invalid request type: Expected Query.");
     }
 }
