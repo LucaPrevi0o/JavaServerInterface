@@ -10,7 +10,6 @@ public interface RequestParameter {
 
     /**
      * Get the value of the request parameter.
-     * @param input the input string
      * @return the value of the request parameter
      */
     public Object getValue();
