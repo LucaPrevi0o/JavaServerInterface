@@ -37,4 +37,10 @@ public interface QueryType {
      * @return the OperationType
      */
     OperationType getOperationType();
+
+    /**
+     * Get the keyword associated with the query type.
+     * @return the query keyword
+     */
+    String getKeyword();
 }
