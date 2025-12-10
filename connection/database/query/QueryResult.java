@@ -13,7 +13,7 @@ public class QueryResult implements Response {
 
     private boolean success;
     private String message;
-    private List<Field> data;
+    private List<List<Field>> data;
 
     /**
      * Constructor for QueryResult.
@@ -21,7 +21,7 @@ public class QueryResult implements Response {
      * @param message the message associated with the result
      * @param data the data returned by the query
      */
-    public QueryResult(boolean success, String message, List<Field> data) {
+    public QueryResult(boolean success, String message, List<List<Field>> data) {
 
         this.success = success;
         this.message = message;
@@ -44,7 +44,7 @@ public class QueryResult implements Response {
      * Gets the data returned by the query.
      * @return the data as a list of maps
      */
-    public List<Field> getData() { return data; }
+    public List<List<Field>> getData() { return data; }
 
     /**  
      * Serializes the QueryResult into a string format for transmission.
@@ -63,11 +63,11 @@ public class QueryResult implements Response {
 
             sb.append(data.size()).append("|");
             
-            for (int i = 0; i < data.size(); i++) {
+            for (var row: data) for (int i = 0; i < row.size(); i++) {
 
                 if (i > 0) sb.append(";");
-                var row = data.get(i);
-                sb.append(row.getName()).append("=").append(row.getValue());
+                var field = row.get(i);
+                sb.append(field.getName()).append("=").append(field.getValue());
             }
         } else sb.append("0|");
         return sb.toString();
