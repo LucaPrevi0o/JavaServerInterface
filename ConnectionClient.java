@@ -23,6 +23,7 @@ public abstract class ConnectionClient extends Client {
         return port;
     }
 
+    @Override
     public Response getResponse(Request request) {
         
         try {
