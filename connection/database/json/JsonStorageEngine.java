@@ -113,6 +113,14 @@ public class JsonStorageEngine extends StorageEngine {
         return results;
     }
 
+    /**
+     * Get the file path for a given collection.
+     * @param collection the collection name
+     * @return the file path
+     */
+    @Override
+    protected String getCollectionPath(String collection) { return storagePath + "/" + collection + ".json"; }
+
     // ============= Private helper methods =============
 
     /**

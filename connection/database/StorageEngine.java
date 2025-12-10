@@ -35,7 +35,7 @@ public abstract class StorageEngine {
      */
     public void write(String collection, List<Field> data) throws FileNotFoundException, IOException {
 
-        var filePath = storagePath + "/" + collection + ".json";
+        var filePath = getCollectionPath(collection);
         var file = new File(filePath);
         
         // Verifica che il file esista
@@ -61,7 +61,7 @@ public abstract class StorageEngine {
      */
     public List<List<Field>> read(String collection, QueryCondition condition) throws FileNotFoundException, IOException {
 
-        var filePath = storagePath + "/" + collection + ".json";
+        var filePath = getCollectionPath(collection);
         var file = new File(filePath);
         
         if (!file.exists()) throw new FileNotFoundException("Collection file not found: " + filePath);
@@ -92,7 +92,7 @@ public abstract class StorageEngine {
      */
     public void delete(String collection, QueryCondition condition) throws FileNotFoundException, IOException {
 
-        var filePath = storagePath + "/" + collection + ".json";
+        var filePath = getCollectionPath(collection);
         var file = new File(filePath);
         
         // Verifica che il file esista
@@ -112,6 +112,13 @@ public abstract class StorageEngine {
     }
 
     // ============= Helper methods =============
+
+    /**
+     * Get the file path for a given collection.
+     * @param collection the collection name
+     * @return the file path
+     */
+    protected abstract String getCollectionPath(String collection);
 
     /**
      * Read the entire content of a file.
