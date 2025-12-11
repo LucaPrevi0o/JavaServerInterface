@@ -1,8 +1,8 @@
-TODO - remake from scratch **a lot** of times during development
-
-# Java Server Interface
+# Java Server Interface (JSI)
 
 A highly modular, protocol-agnostic framework for building custom server implementations in Java. From HTTP web servers to database engines, build anything that listens on a socket.
+
+> **[Read the Complete Wiki](../../wiki)** for in-depth documentation, examples, and guides.
 
 ## Philosophy
 
@@ -30,6 +30,8 @@ The framework follows a three-layer abstraction model:
 - Mix and match: use our HTTP implementation but write custom transport
 - Start from scratch with just the `Server` base class
 
+> **Learn more:** [Architecture Overview](../../wiki/Architecture-Overview) | [Core Abstractions](../../wiki/Core-Abstractions)
+
 ### Modularity by Design
 
 Every component is designed to be:
@@ -45,29 +47,24 @@ Every component is designed to be:
 - **Pure Java**: Zero external dependencies, runs on any JVM
 - **Protocol-Agnostic**: Build HTTP, database, game, or custom protocol servers
 - **Flexible Threading**: Default thread-per-client model, easily customizable
-- **Lifecycle Hooks**: Inject custom behavior at server startup, shutdown, and connection events
-- **Type-Safe**: Generics ensure compile-time safety between server and handler types
+- **Lifecycle Hooks**: Inject custom behavior at server startup and other key points
+- **Layered Architecture**: Use all layers or skip to any level for maximum control
 
 ### Included Implementations
 
-Out of the box, you get:
+- **HTTP Server** ([docs](../../wiki/HTTP-Server)): Annotation-based routing, static file serving, HTTP/1.1 support
+- **Database Server** ([docs](../../wiki/Database-Server)): Query execution, JSON/XML storage, MySQL-compatible parsing
+- **Request/Response Abstractions** ([docs](../../wiki/Core-Abstractions)): Extensible models for any protocol
 
-- **HTTP Server**: Annotation-based routing, static file serving, full HTTP/1.1 support
-- **Database Server**: SQL parsing, in-memory execution, JSON persistence, transaction support
-- **Request/Response Abstractions**: Extensible models for any protocol
+## Project Structure
 
-## Quick Start
+### Example 1: HTTP Server
 
-### Example 1: HTTP Server (Pre-built)
-
-The provided HTTP server implementation is based off of the `HttpServer` class, which uses custom `@Route`-defined methods as entry points for the server routing.
-
-Each route method implemented in the HTTP server can either redirect to a static HTML page, or build a dynamic response returned to the client.
+Build a web server with annotation-based routing:
 
 ```java
-import server.connection.http.HttpServer;
-import server.connection.http.Route;
-import common.http.*;
+import jsi.connection.http.*;
+import jsi.connection.http.response.HttpResponseType;
 
 public class MyWebServer extends HttpServer {
     
@@ -92,216 +89,115 @@ public class MyWebServer extends HttpServer {
 }
 ```
 
-### Example 2: Database Server (Pre-built)
+> **Learn more:** [HTTP Server Documentation](../../wiki/HTTP-Server)
 
-A database server is nothing more that something listening for requests of data.
-Its actual implementation - *the database engine, the storage engine, the query parsing system* - is completely hidden away.
-The `DatabaseServer` instance just needs to know which kind of server is going to use - a **MySQL** server running on a **JSON**-based persistent database, a **NoSQL** server running on **XML** files... anything is possible.
+### Example 2: Database Server
+
+Create a database server with JSON persistence:
 
 ```java
-import server.connection.database.*;
-import server.connection.database.mysql.*;
-import server.connection.database.json.JsonStorageEngine;
+import jsi.connection.database.*;
+import jsi.connection.database.json.JsonStorageEngine;
+import jsi.connection.database.mysql.MySqlServer;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        // Create storage engine (optional - can use in-memory)
-        StorageEngine storage = new JsonStorageEngine();
+        // Create storage engine (JSON or XML)
+        StorageEngine storage = new JsonStorageEngine("./database");
         
         // Create database engine
-        DatabaseEngine engine = new MySqlDatabaseEngine(storage);
+        DatabaseEngine engine = new DatabaseEngine(storage);
         
-        // Start server
-        DatabaseServer server = new MySqlDatabaseServer(3306, engine, storage);
+        // Start MySQL-compatible server
+        DatabaseServer server = new MySqlServer(3306, engine);
         server.start();
         
         // Client can now connect and send SQL:
-        // CREATE TABLE users (id, name, email)
-        // INSERT INTO users VALUES ('1', 'Alice', 'alice@example.com')
         // SELECT * FROM users WHERE name = 'Alice'
+        // INSERT INTO users (id, name) VALUES ('1', 'Alice')
     }
 }
 ```
 
-### Example 4: Custom TCP Protocol
-
-If you need a customizable server accessible from a static address/port combination, don't worry.
-Just extend `ConnectionServer` for TCP-based protocols:
-
-```java
-import server.connection.ConnectionServer;
-import server.connection.ClientHandler;
-import java.net.Socket;
-
-public class MyProtocolServer extends ConnectionServer<MyClientHandler> {
-    
-    public MyProtocolServer(int port) {
-        super(port);
-    }
-    
-    @Override
-    protected MyClientHandler createClientHandler(Socket clientSocket) {
-        return new MyClientHandler(clientSocket);
-    }
-}
-
-class MyClientHandler extends ClientHandler {
-    // Implement parseRequest() and createResponse()
-    // Implement run() for connection lifecycle
-}
-```
+> **Learn more:** [Database Server Documentation](../../wiki/Database-Server)
 
 ### Example 3: Custom Protocol Server
 
-If you need a fully-customizable architecture, based on a custom-defined protocol, you can implement it as well.
-Extend `Server` directly for complete control:
+Extend `ConnectionServer` for TCP-based custom protocols:
 
 ```java
-import server.Server;
-import java.net.DatagramSocket;
-import java.net.DatagramPacket;
+import jsi.connection.ConnectionServer;
+import jsi.Request;
+import jsi.Response;
 
-public class UdpChatServer extends Server {
+public class EchoServer extends ConnectionServer {
     
-    public UdpChatServer(int port) {
+    public EchoServer(int port) {
         super(port);
     }
     
     @Override
-    public void start() {
-        onBeforeStart();
-        
-        try (DatagramSocket socket = new DatagramSocket(getPort())) {
-            onServerStarted();
-            byte[] buffer = new byte[1024];
-            
-            while (true) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
-                handleMessage(packet);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    protected Request parseRequest(String input) {
+        return new EchoRequest(input);
     }
     
     @Override
-    public void stop() {
-        // Cleanup logic
+    public Response handleRequest(Request request) {
+        String message = ((EchoRequest) request).getMessage();
+        return new EchoResponse("ECHO: " + message);
     }
     
-    private void handleMessage(DatagramPacket packet) {
-        // Your protocol implementation
+    public static void main(String[] args) {
+        new EchoServer(9000).start();
     }
 }
 ```
 
-## Architecture Deep Dive
+> **Learn more:** [ConnectionServer Documentation](../../wiki/ConnectionServer)
 
-### Layer 1: Generic Server (`Server.java`)
+## Documentation
 
-The foundation. Defines:
-- Port management
-- Lifecycle methods (`start()`, `stop()`)
-- Hook methods (`onBeforeStart()`, `onServerStarted()`)
+### Wiki Pages
 
-**No assumptions about transport or protocol.**
+- **[Home](../../wiki/Home)** - Wiki overview and navigation
+- **[Getting Started](../../wiki/Getting-Started)** - Installation and quick start
+- **[Architecture Overview](../../wiki/Architecture-Overview)** - Layered design philosophy
+- **[Core Abstractions](../../wiki/Core-Abstractions)** - Server, Client, Request, Response
+- **[ConnectionServer](../../wiki/ConnectionServer)** - TCP transport layer
+- **[HTTP Server](../../wiki/HTTP-Server)** - HTTP protocol implementation
+- **[Database Server](../../wiki/Database-Server)** - Database query execution
 
-### Layer 2: Transport (`ConnectionServer<T>`)
+### Quick Links
 
-Handles TCP socket connections:
-- Client acceptance loop
-    - Every client is handled on a separated thread using a `ClientHandler` object.
-    - The actual `ClientHandler` is the runnable instance, providing the request/response workflow.
-- Thread-per-client model (customizable)
-- Generic file I/O utilities
-- Type-safe handler binding
+- New to JSI? → [Getting Started](../../wiki/Getting-Started)
+- Want to understand the design? → [Architecture Overview](../../wiki/Architecture-Overview)
+- Building an HTTP server? → [HTTP Server Guide](../../wiki/HTTP-Server)
+- Building a database? → [Database Server Guide](../../wiki/Database-Server)
 
-**Knows about sockets, not protocols.**
+## Architecture Overview
 
-### Layer 3: Protocol Implementations
+### Three-Layer Model
 
-#### HTTP (`HttpServer`)
-- Annotation-based routing (`@Route`)
-- HTTP request parsing (method, path, headers, parameters)
-- Response serialization (status, headers, body)
-- Static file serving
-- Extensible error handling
-
-#### Database (`DatabaseServer`)
-- Customizable request parsing for different DBMS implementations
-- Separation between the `DatabaseEngine`, `StorageEngine` and `DatabaseClientHandler`
-    - The `DatabaseEngine` is the actual runner of the server: it decides which kind of requests are accepted, and how they should be formatted.
-    - The `StorageEngine` decides how the data is stored with persistence on the server, how to access it in a safe way and how to parse back the response for the client.
-    - The `DatabaseClientHandler` is the thread which runs for every client asking for a query to be executed on the server.
-
-## Extensibility Points
-
-### 1. Custom Protocols
-
-Implement your own protocol by extending `ConnectionServer`:
-
-```java
-public class WebSocketServer extends ConnectionServer<WebSocketHandler> {
-    @Override
-    protected WebSocketHandler createClientHandler(Socket socket) {
-        return new WebSocketHandler(socket);
-    }
-}
+```
+┌─────────────────────────────────────┐
+│  Layer 3: Protocol                  │  ← HttpServer, DatabaseServer
+│  (Application Logic)                │     Your custom protocol
+├─────────────────────────────────────┤
+│  Layer 2: Transport                 │  ← ConnectionServer
+│  (TCP Socket Management)            │     Thread-per-client
+├─────────────────────────────────────┤
+│  Layer 1: Foundation                │  ← Server (abstract base)
+│  (Lifecycle & Hooks)                │     start(), stop()
+└─────────────────────────────────────┘
 ```
 
-### 2. Custom Storage Engines
+Each layer can be used independently or combined for maximum flexibility.
 
-Implement `StorageEngine` for different persistence backends:
+> **Deep dive:** [Architecture Overview](../../wiki/Architecture-Overview)
 
-```java
-public class PostgresStorageEngine implements StorageEngine {
-    @Override
-    public void saveTable(String tableName, List<Map<String, Object>> rows) {
-        // Save to PostgreSQL
-    }
-    
-    @Override
-    public List<Map<String, Object>> loadTable(String tableName) {
-        // Load from PostgreSQL
-    }
-    
-    // ... implement other methods
-}
-```
+## Key Features
 
-### 3. Custom Threading Models
-
-Override `onClientConnected()` for connection pooling:
-
-```java
-public class PooledServer extends ConnectionServer<MyHandler> {
-    private ExecutorService pool = Executors.newFixedThreadPool(10);
-    
-    @Override
-    protected void onClientConnected(MyHandler handler) {
-        pool.submit(handler);
-    }
-}
-```
-
-### 4. Middleware and Request Processing
-
-Extend handlers to add middleware:
-
-```java
-public class LoggingHttpHandler extends HttpClientHandler {
-    @Override
-    protected HttpResponse createResponse(Request request) {
-        log.info("Request: " + request);
-        HttpResponse response = super.createResponse(request);
-        log.info("Response: " + response.getResponseType());
-        return response;
-    }
-}
-```
-
-## Project Structure
+### Framework Capabilities
 
 ```
 ├── common/                      # Protocol-agnostic abstractions
@@ -355,66 +251,51 @@ The project includes a simple build script (`jmake`) that works without external
 ./jmake clean
 ```
 
+> **Full documentation:** [Getting Started Guide](../../wiki/Getting-Started)
+
 ## Design Principles
 
-### 1. Separation of Concerns
-Each layer handles one responsibility. Transport doesn't know about protocols. Protocols don't know about sockets.
+JSI exemplifies SOLID design principles:
 
-### 2. Open/Closed Principle
-Open for extension, closed for modification. Extend classes without changing the framework.
+- **Separation of Concerns**: Each layer handles one responsibility
+- **Open/Closed Principle**: Open for extension, closed for modification
+- **Dependency Inversion**: High-level modules depend on abstractions, not implementations
+- **Interface Segregation**: Small, focused interfaces instead of monolithic ones
+- **Liskov Substitution**: Any implementation can replace another without breaking code
 
-### 3. Dependency Inversion
-High-level modules (protocols) don't depend on low-level modules (transport). Both depend on abstractions.
+> **Deep dive:** [Architecture Overview](../../wiki/Architecture-Overview)
 
-### 4. Interface Segregation
-Small, focused interfaces (`StorageEngine`, `DatabaseEngine`) instead of monolithic ones.
+## Use Cases & Examples
 
-### 5. Liskov Substitution
-Any `ConnectionServer` implementation can replace another without breaking client code.
+- **Web Development**: REST APIs, static file servers, full web applications ([HTTP Server](../../wiki/HTTP-Server))
+- **Database Systems**: In-memory databases, caching layers, protocol adapters ([Database Server](../../wiki/Database-Server))
+- **Custom Protocols**: Game servers, IoT communication, messaging systems ([ConnectionServer](../../wiki/ConnectionServer))
+- **Education**: Learn server architecture, network programming, design patterns
 
-## Use Cases
+## Limitations
 
-### Web Development
-Build REST APIs, static file servers, or full web applications with annotation-based routing.
+This is an **educational and prototyping framework**, not production-ready:
 
-### Database Systems
-Create in-memory databases, caching layers, or protocol adapters for existing databases.
+- No async I/O (uses blocking I/O with thread-per-client)
+- No HTTP/2, WebSocket, or compression
+- Basic SQL parsing (regex-based, limited operators)
+- No security (TLS/SSL, authentication, rate limiting)
+- Limited scalability (thread-per-client doesn't scale to 10,000+ connections)
 
-### Game Servers
-Implement custom binary protocols for real-time multiplayer games.
+For production, consider: **Netty** (async I/O), **Jetty** (HTTP), **H2** (SQL)
 
-### IoT and Embedded
-Build lightweight protocol servers for device communication.
-
-### Education
-Learn server architecture, network programming, and design patterns through hands-on implementation.
-
-## Limitations and Trade-offs
-
-This is an **educational and prototyping framework**, not a production-ready solution:
-
-- **No async I/O**: Uses blocking I/O with thread-per-client model
-- **Basic HTTP**: No HTTP/2, WebSocket upgrade, or compression
-- **Simple SQL**: Regex-based parsing, limited operator support
-- **No security**: No TLS/SSL, authentication, or rate limiting
-- **In-memory first**: Database persistence is optional and basic
-- **Limited scalability**: Thread-per-client model doesn't scale to thousands of connections
-
-For production use, consider frameworks like Netty (async I/O), Jetty (HTTP), or H2 (SQL).
-
-## Performance Considerations
-
-- **Threading**: Default thread-per-client. Consider pooling for high connection counts.
-- **I/O**: Blocking sockets. For high throughput, implement async I/O layer.
-- **Parsing**: Regex-based SQL parsing. For complex queries, use a proper parser generator.
-- **Storage**: JSON serialization is simple but slow. Implement binary formats for performance.
-
-## Contributing
+## Contributing & Community
 
 Contributions are welcome! This framework is designed to be:
 - **Easy to understand**: Clear abstractions, minimal magic
 - **Easy to extend**: Add new protocols, storage engines, or features
 - **Easy to modify**: Change any layer without breaking others
+
+**Resources:**
+- [Complete Wiki Documentation](../../wiki)
+- [Report Issues](../../issues)
+- [Discussions](../../discussions)
+- JavaDoc comments throughout the codebase
 
 ## License
 
@@ -438,16 +319,14 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 
 For the full license text, see the [LICENSE-CC-BY-NC-SA](LICENSE-CC-BY-NC-SA) file.
 
-## Support and Community
-
-- **Issues**: Report bugs or request features via GitHub Issues
-- **Discussions**: Ask questions or share your implementations
-- **Documentation**: JavaDoc comments throughout the codebase
-
-## Acknowledgments
-
-Built with **love** as a learning resource for understanding server architecture, network programming, and software design patterns.
-
 ---
 
-**Ready to build?** Start with the examples above, explore the codebase, and extend the framework to create your own server implementations!
+## Ready to Start?
+
+1. **New to JSI?** → [Getting Started Guide](../../wiki/Getting-Started)
+2. **Understand the design?** → [Architecture Overview](../../wiki/Architecture-Overview)
+3. **Build an HTTP server?** → [HTTP Server Guide](../../wiki/HTTP-Server)
+4. **Build a database?** → [Database Server Guide](../../wiki/Database-Server)
+5. **Explore the code?** → Browse the [source files](.)
+
+**Complete documentation:** [Wiki Home](../../wiki)
