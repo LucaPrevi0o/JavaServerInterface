@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Abstract HTTP server implementation with routing support.
@@ -182,7 +184,8 @@ public abstract class HttpServer extends ConnectionServer {
 
         try {
 
-            var content = readFile(filePath);
+            var path = Paths.get(filePath);
+            var content = Files.readString(path, StandardCharsets.UTF_8);
             var contentBytes = content.getBytes(StandardCharsets.UTF_8);
             
             return new HttpResponse(
