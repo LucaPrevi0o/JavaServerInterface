@@ -18,25 +18,9 @@ public class HttpRequest implements Request {
     private HttpRequestParameter[] parameters;
     private HttpRequestHeader[] headers;
 
-    /** Default constructor for HttpRequest. */
-    public HttpRequest() { this(null, null, null); }
-
     public HttpRequestType getHttpRequestType() { return requestType; }
     public HttpRequestParameter[] getParameters() { return parameters; }
     public HttpRequestHeader[] getHeaders() { return headers; }
-
-    /**
-     * Constructor for HttpRequest.
-     * @param requestType the type of the HTTP request
-     * @param parameters the parameters of the HTTP request
-     * @param headers the headers of the HTTP request
-     */
-    public HttpRequest(HttpRequestType requestType, HttpRequestParameter[] parameters, HttpRequestHeader[] headers) { 
-
-        this.requestType = requestType;
-        this.parameters = parameters;
-        this.headers = headers;
-    }
 
     /**
      * Get the path from the HTTP request.
@@ -66,7 +50,7 @@ public class HttpRequest implements Request {
         // Implementation for extracting HTTP request type from input
         if (input == null || input.isEmpty()) return null;
 
-        String method = input.trim().split("\\s+")[0].toUpperCase();
+        var method = input.trim().split("\\s+")[0].toUpperCase();
         try { return HttpRequestType.valueOf(method); }
         catch (IllegalArgumentException e) { return null; }
     }
@@ -101,7 +85,7 @@ public class HttpRequest implements Request {
         
         var requestParameters = new HttpRequestParameter[params.length];
         
-        for (int i = 0; i < params.length; i++) {
+        for (var i = 0; i < params.length; i++) {
 
             var param = params[i];
             var equalsIndex = param.indexOf('=');
@@ -162,28 +146,16 @@ public class HttpRequest implements Request {
     }
 
     /**
-     * Create a new HttpRequest instance.
-     * @param type the request type
-     * @param params the request parameters
-     * @param headers the request headers
-     * @return a new HttpRequest instance
-     */
-    protected HttpRequest createRequest(HttpRequestType type, HttpRequestParameter[] params, HttpRequestHeader[] headers) {
-        return new HttpRequest(type, params, headers);
-    }
-
-    /**
      * Parse the input string to create an HttpRequest object with path extraction.
      * @param input the input string representing the request
      * @return an HttpRequest object
      */
     public HttpRequest(String input) {
 
-        var type = extractType(input);
-        var params = extractParameters(input);
-        var headers = extractHeaders(input);
-        var request = createRequest(type, params, headers);
-        request.path = extractPath(input);
+        this.requestType = extractType(input);
+        this.parameters = extractParameters(input);
+        this.headers = extractHeaders(input);
+        this.path = extractPath(input);
     }
 
     /**
@@ -194,7 +166,7 @@ public class HttpRequest implements Request {
     public String serialize() {
         
         var sb = new StringBuilder();
-        sb.append(requestType != null ? requestType.name() : "UNKNOWN").append(" ");
+        sb.append(requestType == null ? "UNKNOWN" : requestType.getName()).append(" ");
         sb.append(path != null ? path : "/").append(" HTTP/1.1\r\n");
         
         if (headers != null) for (var header : headers)

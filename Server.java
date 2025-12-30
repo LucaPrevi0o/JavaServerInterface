@@ -29,4 +29,11 @@ public abstract class Server {
      * @return the response generated from the request
      */
     public abstract Response handleRequest(Request request);
+
+    /**
+     * Parse the incoming request string into a Request object.
+     * @param input the input string representing the request
+     * @return the parsed Request object
+     */
+    protected abstract Request parseRequest(String input);
 }

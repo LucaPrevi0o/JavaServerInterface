@@ -80,12 +80,12 @@ public abstract class HttpServer extends ConnectionServer {
      * 
      * This method scans for methods annotated with {@code @Route} in the subclass
      * and registers them as route handlers.
-     * @param controller the instance of the server subclass
      */
     protected void registerRoutes() {
         
         for (var method : this.getClass().getDeclaredMethods()) if (method.isAnnotationPresent(Route.class)) {
             
+            System.out.println("Registering route: " + method.getName());
             var routeAnnotation = method.getAnnotation(Route.class);
             var path = routeAnnotation.path();
             var staticResource = routeAnnotation.staticResource();
@@ -111,7 +111,7 @@ public abstract class HttpServer extends ConnectionServer {
 
         var path = extractPath(request);
         for (var handler : routes) if (handler.getPath().equals(path)) {
-                
+            
             try { return handler.handleRequest(request); }
             catch (Exception e) {
 
@@ -124,9 +124,6 @@ public abstract class HttpServer extends ConnectionServer {
 
     /**
      * Extract the path from the request.
-
-/**
- * Abstract server clas
      * @param request the HTTP request
      * @return the path (e.g., "/about")
      */
