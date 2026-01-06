@@ -60,7 +60,6 @@ public abstract class ConnectionServer extends Server {
             ) {
 
                 var request = extractRequest(clientSocket);
-                System.out.println("Received request:\n" + request);
                 var response = handleRequest(parseRequest(request));
                 out.println(response.serialize());
                 out.flush();

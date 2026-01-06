@@ -58,12 +58,14 @@ public abstract class HttpServer extends ConnectionServer {
          */
         public HttpResponse handleRequest(Request request) throws Exception {
 
-            // If staticResource is specified, serve the file directly
-            if (staticResource != null && !staticResource.isEmpty()) return serveHtmlFile(staticResource);
-            
-            // Otherwise, invoke the handler method
             method.setAccessible(true);
-            return (HttpResponse) method.invoke(HttpServer.this, request);
+            if (staticResource == null || staticResource.isEmpty()) return (HttpResponse) method.invoke(HttpServer.this, request);
+            
+            var response = (HttpResponse) method.invoke(HttpServer.this, request);
+            var htmlResponse = serveHtmlFile(staticResource);
+            if (response != null && response.getHeaders() != null) 
+                for (var header : response.getHeaders()) htmlResponse.addHeader(header);
+            return htmlResponse;
         }
     }
 
@@ -85,7 +87,6 @@ public abstract class HttpServer extends ConnectionServer {
         
         for (var method : this.getClass().getDeclaredMethods()) if (method.isAnnotationPresent(Route.class)) {
             
-            System.out.println("Registering route: " + method.getName());
             var routeAnnotation = method.getAnnotation(Route.class);
             var path = routeAnnotation.path();
             var staticResource = routeAnnotation.staticResource();

@@ -4,6 +4,7 @@ import jsi.Response;
 import jsi.response.ResponseBody;
 import jsi.response.ResponseHeader;
 import jsi.response.ResponseType;
+import jsi.connection.http.response.HttpResponseHeader;
 
 /**
  * Represents an HTTP response.
@@ -48,6 +49,45 @@ public class HttpResponse implements Response {
         this.responseType = responseType;
         this.headers = headers;
         this.body = body;
+    }
+
+    /**
+     * Add a response header (appends to existing headers array).
+     * @param header header to add
+     */
+    public void addHeader(ResponseHeader header) {
+
+        if (header == null) return;
+        if (this.headers == null) {
+            
+            this.headers = new ResponseHeader[] { header };
+            return;
+        }
+
+        var newHeaders = new ResponseHeader[this.headers.length + 1];
+        System.arraycopy(this.headers, 0, newHeaders, 0, this.headers.length);
+        newHeaders[this.headers.length] = header;
+        this.headers = newHeaders;
+    }
+    
+    /**
+     * Add a cookie by adding a Set-Cookie header.
+     * @param cookie the cookie to add
+     */
+    public void addCookie(Cookie cookie) {
+
+        if (cookie == null) return;
+        this.addHeader(new HttpResponseHeader("Set-Cookie", cookie.getName() + "=" + cookie.getValue()));
+    }
+
+    /**
+     * Delete a cookie by adding a Set-Cookie header with an expired date.
+     * @param cookieName the name of the cookie to delete
+     */
+    public void deleteCookie(String cookieName) {
+
+        if (cookieName == null || cookieName.isEmpty()) return;
+        this.addHeader(new HttpResponseHeader("Set-Cookie", cookieName + "=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"));
     }
 
     /**

@@ -1,7 +1,6 @@
 package jsi.connection.http;
 
 import java.util.ArrayList;
-
 import jsi.Request;
 import jsi.connection.http.request.HttpRequestHeader;
 import jsi.connection.http.request.HttpRequestParameter;
@@ -17,10 +16,31 @@ public class HttpRequest implements Request {
     private HttpRequestType requestType;
     private HttpRequestParameter[] parameters;
     private HttpRequestHeader[] headers;
+    private Cookie[] cookies;
 
+    /**
+     * Get the HTTP request type.
+     * @return the HTTP request type
+     */
     public HttpRequestType getHttpRequestType() { return requestType; }
+
+    /**
+     * Get the request parameters.
+     * @return the request parameters
+     */
     public HttpRequestParameter[] getParameters() { return parameters; }
+
+    /**
+     * Get the request headers.
+     * @return the request headers
+     */
     public HttpRequestHeader[] getHeaders() { return headers; }
+
+    /**
+     * Get the cookies from the HTTP request.
+     * @return the request cookies
+     */
+    public Cookie[] getCookies() { return cookies; }
 
     /**
      * Get the path from the HTTP request.
@@ -37,6 +57,18 @@ public class HttpRequest implements Request {
 
         if (name == null || name.isEmpty() || parameters == null) return null;
         for (var param : parameters) if (param.getName().equals(name)) return param.getValue();
+        return null;
+    }
+
+    /**
+     * Get a specific cookie by name.
+     * @param name the name of the request cookie
+     * @return the Cookie object, or null if not found
+     */
+    public Cookie getCookie(String name) {
+
+        if (name == null || cookies == null) return null;
+        for (var cookie : cookies) if (cookie.getName().equals(name)) return cookie;
         return null;
     }
 
@@ -146,6 +178,33 @@ public class HttpRequest implements Request {
     }
 
     /**
+     * Extract cookies from the request headers.
+     * @return an array of Cookie objects
+     */
+    protected Cookie[] extractCookies() {
+
+        if (headers == null) return new Cookie[0];
+        var cookieList = new ArrayList<Cookie>();
+        for (var header : headers) if (header.getName().equalsIgnoreCase("Cookie")) {
+                
+            var cookieHeaderValue = header.getValue();
+            var cookiePairs = cookieHeaderValue.split(";");
+            for (var cookiePair : cookiePairs) {
+                
+                var equalsIndex = cookiePair.indexOf('=');
+                if (equalsIndex != -1) {
+                    
+                    var name = cookiePair.substring(0, equalsIndex).trim();
+                    var value = cookiePair.substring(equalsIndex + 1).trim();
+                    cookieList.add(new Cookie(name, value));
+                }
+            }
+        }
+        
+        return cookieList.toArray(new Cookie[0]);
+    }
+
+    /**
      * Parse the input string to create an HttpRequest object with path extraction.
      * @param input the input string representing the request
      * @return an HttpRequest object
@@ -155,6 +214,7 @@ public class HttpRequest implements Request {
         this.requestType = extractType(input);
         this.parameters = extractParameters(input);
         this.headers = extractHeaders(input);
+        this.cookies = extractCookies();
         this.path = extractPath(input);
     }
 
