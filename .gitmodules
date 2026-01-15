@@ -1,4 +1,0 @@
-[submodule "jdbi"]
-	path = jdbi
-	branch = main
-	url = https://github.com/LucaPrevi0o/JavaDatabaseInterface.git

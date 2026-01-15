@@ -67,22 +67,22 @@ import jsi.connection.http.*;
 import jsi.connection.http.response.HttpResponseType;
 
 public class MyWebServer extends HttpServer {
-    
+
     public MyWebServer(int port) {
         super(port);
     }
-    
+
     @Route(path = "/")
     public HttpResponse home(HttpRequest request) {
-        return createHtmlResponse(HttpResponseType.OK, 
-            "<h1>Hello, World!</h1>");
+        return createHtmlResponse(HttpResponseType.OK,
+                "<h1>Hello, World!</h1>");
     }
-    
+
     @Route(path = "/about", staticResource = "static/about.html")
     public HttpResponse about(HttpRequest request) {
         return null; // File served automatically
     }
-    
+
     public static void main(String[] args) {
         new MyWebServer(8080).start();
     }
@@ -104,14 +104,14 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // Create storage engine (JSON or XML)
         StorageEngine storage = new JsonStorageEngine("./database");
-        
+
         // Create database engine
         DatabaseEngine engine = new DatabaseEngine(storage);
-        
+
         // Start MySQL-compatible server
         DatabaseServer server = new MySqlServer(3306, engine);
         server.start();
-        
+
         // Client can now connect and send SQL:
         // SELECT * FROM users WHERE name = 'Alice'
         // INSERT INTO users (id, name) VALUES ('1', 'Alice')
@@ -126,27 +126,27 @@ public class Main {
 Extend `ConnectionServer` for TCP-based custom protocols:
 
 ```java
-import jsi.connection.ConnectionServer;
 import jsi.Request;
 import jsi.Response;
+import jsi.connection.ConnectionServer;
 
 public class EchoServer extends ConnectionServer {
-    
+
     public EchoServer(int port) {
         super(port);
     }
-    
+
     @Override
     protected Request parseRequest(String input) {
         return new EchoRequest(input);
     }
-    
+
     @Override
     public Response handleRequest(Request request) {
         String message = ((EchoRequest) request).getMessage();
         return new EchoResponse("ECHO: " + message);
     }
-    
+
     public static void main(String[] args) {
         new EchoServer(9000).start();
     }
