@@ -1,0 +1,3 @@
+[submodule "jdbi"]
+	path = jdbi
+	url = https://github.com/LucaPrevi0o/JavaDatabaseInterface.git
