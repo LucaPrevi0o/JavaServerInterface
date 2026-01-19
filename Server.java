@@ -1,4 +1,4 @@
-package jsi;
+package com.lucaprevioo.jsi;
 
 public abstract class Server {
     

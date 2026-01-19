@@ -1,10 +1,10 @@
-package jsi.connection.http;
+package com.lucaprevioo.jsi.connection.http;
 
 import java.util.ArrayList;
-import jsi.Request;
-import jsi.connection.http.request.HttpRequestHeader;
-import jsi.connection.http.request.HttpRequestParameter;
-import jsi.connection.http.request.HttpRequestType;
+import com.lucaprevioo.jsi.Request;
+import com.lucaprevioo.jsi.connection.http.request.HttpRequestHeader;
+import com.lucaprevioo.jsi.connection.http.request.HttpRequestParameter;
+import com.lucaprevioo.jsi.connection.http.request.HttpRequestType;
 
 /**
  * Class representing an HTTP request.

@@ -1,6 +1,6 @@
-package jsi.connection.database.mysql.query;
+package com.lucaprevioo.jsi.connection.database.mysql.query;
 
-import jsi.connection.database.query.QueryCondition;
+import com.lucaprevioo.jsi.connection.database.query.QueryCondition;
 
 public class MySqlQueryCondition extends QueryCondition {
 

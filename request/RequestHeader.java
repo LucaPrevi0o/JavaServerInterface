@@ -1,4 +1,4 @@
-package jsi.request;
+package com.lucaprevioo.jsi.request;
 
 public interface RequestHeader {
     

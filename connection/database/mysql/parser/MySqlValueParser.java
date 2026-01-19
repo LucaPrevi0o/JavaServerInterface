@@ -1,4 +1,4 @@
-package jsi.connection.database.mysql.parser;
+package com.lucaprevioo.jsi.connection.database.mysql.parser;
 
 /**
  * Utility class for parsing and converting MySQL values.

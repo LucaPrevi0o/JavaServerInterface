@@ -1,4 +1,4 @@
-package jsi.connection;
+package com.lucaprevioo.jsi.connection;
 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import jsi.Server;
+import com.lucaprevioo.jsi.Server;
 
 import java.nio.charset.StandardCharsets;
 

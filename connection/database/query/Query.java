@@ -1,7 +1,7 @@
-package jsi.connection.database.query;
+package com.lucaprevioo.jsi.connection.database.query;
 
-import jsi.Request;
-import jsi.connection.database.Field;
+import com.lucaprevioo.jsi.Request;
+import com.lucaprevioo.jsi.connection.database.Field;
 
 import java.util.List;
 

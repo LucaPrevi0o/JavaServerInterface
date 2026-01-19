@@ -1,9 +1,9 @@
-package jsi.connection.database.query;
+package com.lucaprevioo.jsi.connection.database.query;
 
 import java.util.List;
 
-import jsi.Response;
-import jsi.connection.database.Field;
+import com.lucaprevioo.jsi.Response;
+import com.lucaprevioo.jsi.connection.database.Field;
 
 /**
  * Class representing the result of a database query.

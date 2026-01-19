@@ -1,6 +1,6 @@
-package jsi.connection.http.response;
+package com.lucaprevioo.jsi.connection.http.response;
 
-import jsi.response.ResponseHeader;
+import com.lucaprevioo.jsi.response.ResponseHeader;
 
 /**
  * Class representing an HTTP response header.

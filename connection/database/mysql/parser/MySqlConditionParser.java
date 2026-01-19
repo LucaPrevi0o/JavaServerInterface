@@ -1,7 +1,7 @@
-package jsi.connection.database.mysql.parser;
+package com.lucaprevioo.jsi.connection.database.mysql.parser;
 
-import jsi.connection.database.mysql.query.MySqlQueryCondition;
-import jsi.connection.database.query.QueryCondition;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQueryCondition;
+import com.lucaprevioo.jsi.connection.database.query.QueryCondition;
 
 /**
  * Utility class for parsing WHERE conditions from MySQL queries.

@@ -1,4 +1,4 @@
-package jsi.response;
+package com.lucaprevioo.jsi.response;
 
 /**
  * Interface representing a response type.

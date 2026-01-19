@@ -1,6 +1,6 @@
-package jsi.connection.http.request;
+package com.lucaprevioo.jsi.connection.http.request;
 
-import jsi.request.RequestType;
+import com.lucaprevioo.jsi.request.RequestType;
 
 /**
  * Enumeration of HTTP request types.

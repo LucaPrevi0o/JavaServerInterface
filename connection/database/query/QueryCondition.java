@@ -1,4 +1,4 @@
-package jsi.connection.database.query;
+package com.lucaprevioo.jsi.connection.database.query;
 
 import java.util.List;
 

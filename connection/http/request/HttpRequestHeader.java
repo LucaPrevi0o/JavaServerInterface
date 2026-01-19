@@ -1,6 +1,6 @@
-package jsi.connection.http.request;
+package com.lucaprevioo.jsi.connection.http.request;
 
-import jsi.request.RequestHeader;
+import com.lucaprevioo.jsi.request.RequestHeader;
 
 /**
  * Class representing an HTTP request header.

@@ -1,7 +1,7 @@
-package jsi.connection.database.mysql.parser;
+package com.lucaprevioo.jsi.connection.database.mysql.parser;
 
-import jsi.connection.database.Field;
-import jsi.connection.database.mysql.query.MySqlQueryType;
+import com.lucaprevioo.jsi.connection.database.Field;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQueryType;
 
 import java.util.ArrayList;
 import java.util.List;

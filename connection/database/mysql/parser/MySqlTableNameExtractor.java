@@ -1,6 +1,6 @@
-package jsi.connection.database.mysql.parser;
+package com.lucaprevioo.jsi.connection.database.mysql.parser;
 
-import jsi.connection.database.mysql.query.MySqlQueryType;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQueryType;
 
 /**
  * Utility class for extracting table names from MySQL queries.

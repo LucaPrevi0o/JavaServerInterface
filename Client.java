@@ -1,4 +1,4 @@
-package jsi;
+package com.lucaprevioo.jsi;
 
 /**
  * Abstract class representing a client that can send requests and receive responses.

@@ -1,6 +1,6 @@
-package jsi.connection.http.response;
+package com.lucaprevioo.jsi.connection.http.response;
 
-import jsi.response.ResponseType;
+import com.lucaprevioo.jsi.response.ResponseType;
 
 /**
  * Enum representing HTTP response types.

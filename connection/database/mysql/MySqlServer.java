@@ -1,10 +1,10 @@
-package jsi.connection.database.mysql;
+package com.lucaprevioo.jsi.connection.database.mysql;
 
-import jsi.Request;
-import jsi.connection.database.DatabaseEngine;
-import jsi.connection.database.DatabaseServer;
-import jsi.connection.database.mysql.query.MySqlQuery;
-import jsi.connection.database.query.QueryResult;
+import com.lucaprevioo.jsi.Request;
+import com.lucaprevioo.jsi.connection.database.DatabaseEngine;
+import com.lucaprevioo.jsi.connection.database.DatabaseServer;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQuery;
+import com.lucaprevioo.jsi.connection.database.query.QueryResult;
 
 public class MySqlServer extends DatabaseServer {
     

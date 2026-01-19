@@ -1,4 +1,4 @@
-package jsi.connection.http;
+package com.lucaprevioo.jsi.connection.http;
 
 /**
  * Simple cookie model representing a name/value pair.

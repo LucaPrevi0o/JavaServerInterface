@@ -1,6 +1,6 @@
-package jsi;
-import jsi.connection.database.query.Query;
-import jsi.connection.database.query.QueryResult;
+package com.lucaprevioo.jsi;
+import com.lucaprevioo.jsi.connection.database.query.Query;
+import com.lucaprevioo.jsi.connection.database.query.QueryResult;
 
 /**
  * Abstract class representing a database client.

@@ -1,6 +1,6 @@
-package jsi.connection.http.request;
+package com.lucaprevioo.jsi.connection.http.request;
 
-import jsi.request.RequestParameter;
+import com.lucaprevioo.jsi.request.RequestParameter;
 
 /**
  * Class representing an HTTP request parameter.

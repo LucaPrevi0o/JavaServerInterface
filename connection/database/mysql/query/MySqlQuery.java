@@ -1,10 +1,10 @@
-package jsi.connection.database.mysql.query;
+package com.lucaprevioo.jsi.connection.database.mysql.query;
 
-import jsi.connection.database.query.Query;
-import jsi.connection.database.Field;
-import jsi.connection.database.mysql.parser.MySqlConditionParser;
-import jsi.connection.database.mysql.parser.MySqlFieldsExtractor;
-import jsi.connection.database.mysql.parser.MySqlTableNameExtractor;
+import com.lucaprevioo.jsi.connection.database.query.Query;
+import com.lucaprevioo.jsi.connection.database.Field;
+import com.lucaprevioo.jsi.connection.database.mysql.parser.MySqlConditionParser;
+import com.lucaprevioo.jsi.connection.database.mysql.parser.MySqlFieldsExtractor;
+import com.lucaprevioo.jsi.connection.database.mysql.parser.MySqlTableNameExtractor;
 
 import java.util.List;
 

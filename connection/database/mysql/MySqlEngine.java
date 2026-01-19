@@ -1,13 +1,13 @@
-package jsi.connection.database.mysql;
+package com.lucaprevioo.jsi.connection.database.mysql;
 
-import jsi.connection.database.DatabaseEngine;
-import jsi.connection.database.Field;
-import jsi.connection.database.StorageEngine;
-import jsi.connection.database.mysql.query.MySqlQuery;
-import jsi.connection.database.mysql.query.MySqlQueryCondition;
-import jsi.connection.database.mysql.query.MySqlQueryType;
-import jsi.connection.database.query.Query;
-import jsi.connection.database.query.QueryResult;
+import com.lucaprevioo.jsi.connection.database.DatabaseEngine;
+import com.lucaprevioo.jsi.connection.database.Field;
+import com.lucaprevioo.jsi.connection.database.StorageEngine;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQuery;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQueryCondition;
+import com.lucaprevioo.jsi.connection.database.mysql.query.MySqlQueryType;
+import com.lucaprevioo.jsi.connection.database.query.Query;
+import com.lucaprevioo.jsi.connection.database.query.QueryResult;
 
 import java.io.IOException;
 import java.util.ArrayList;

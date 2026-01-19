@@ -1,8 +1,8 @@
-package jsi.connection.database;
+package com.lucaprevioo.jsi.connection.database;
 
-import jsi.connection.database.query.Query;
-import jsi.connection.database.query.QueryResult;
-import jsi.connection.database.query.QueryType.OperationType;
+import com.lucaprevioo.jsi.connection.database.query.Query;
+import com.lucaprevioo.jsi.connection.database.query.QueryResult;
+import com.lucaprevioo.jsi.connection.database.query.QueryType.OperationType;
 
 /**
  * Interface representing a database engine.

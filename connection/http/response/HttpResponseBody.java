@@ -1,6 +1,6 @@
-package jsi.connection.http.response;
+package com.lucaprevioo.jsi.connection.http.response;
 
-import jsi.response.ResponseBody;
+import com.lucaprevioo.jsi.response.ResponseBody;
 
 /**
  * Represents the body of an HTTP response.

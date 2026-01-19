@@ -63,8 +63,8 @@ Every component is designed to be:
 Build a web server with annotation-based routing:
 
 ```java
-import jsi.connection.http.*;
-import jsi.connection.http.response.HttpResponseType;
+import com.lucaprevioo.jsi.connection.http.*;
+import com.lucaprevioo.jsi.connection.http.response.HttpResponseType;
 
 public class MyWebServer extends HttpServer {
 
@@ -96,9 +96,9 @@ public class MyWebServer extends HttpServer {
 Create a database server with JSON persistence:
 
 ```java
-import jsi.connection.database.*;
-import jsi.connection.database.json.JsonStorageEngine;
-import jsi.connection.database.mysql.MySqlServer;
+import com.lucaprevioo.jsi.connection.database.*;
+import com.lucaprevioo.jsi.connection.database.json.JsonStorageEngine;
+import com.lucaprevioo.jsi.connection.database.mysql.MySqlServer;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -126,9 +126,9 @@ public class Main {
 Extend `ConnectionServer` for TCP-based custom protocols:
 
 ```java
-import jsi.Request;
-import jsi.Response;
-import jsi.connection.ConnectionServer;
+import com.lucaprevioo.jsi.Request;
+import com.lucaprevioo.jsi.Response;
+import com.lucaprevioo.jsi.connection.ConnectionServer;
 
 public class EchoServer extends ConnectionServer {
 

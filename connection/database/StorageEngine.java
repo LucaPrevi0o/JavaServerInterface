@@ -1,4 +1,4 @@
-package jsi.connection.database;
+package com.lucaprevioo.jsi.connection.database;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8,7 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
-import jsi.connection.database.query.QueryCondition;
+import com.lucaprevioo.jsi.connection.database.query.QueryCondition;
 
 /**
  * Abstract JSON-based implementation of StorageEngine.

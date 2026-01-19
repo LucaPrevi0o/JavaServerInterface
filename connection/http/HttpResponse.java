@@ -1,10 +1,10 @@
-package jsi.connection.http;
+package com.lucaprevioo.jsi.connection.http;
 
-import jsi.Response;
-import jsi.response.ResponseBody;
-import jsi.response.ResponseHeader;
-import jsi.response.ResponseType;
-import jsi.connection.http.response.HttpResponseHeader;
+import com.lucaprevioo.jsi.Response;
+import com.lucaprevioo.jsi.response.ResponseBody;
+import com.lucaprevioo.jsi.response.ResponseHeader;
+import com.lucaprevioo.jsi.response.ResponseType;
+import com.lucaprevioo.jsi.connection.http.response.HttpResponseHeader;
 
 /**
  * Represents an HTTP response.

@@ -1,4 +1,4 @@
-package jsi.connection.http.request;
+package com.lucaprevioo.jsi.connection.http.request;
 
 public class HttpRequestBuilder {
     

@@ -1,10 +1,10 @@
-package jsi.connection.database.xml;
+package com.lucaprevioo.jsi.connection.database.xml;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import jsi.connection.database.Field;
-import jsi.connection.database.StorageEngine;
+import com.lucaprevioo.jsi.connection.database.Field;
+import com.lucaprevioo.jsi.connection.database.StorageEngine;
 
 /**
  * Concrete implementation of XmlStorageEngine.

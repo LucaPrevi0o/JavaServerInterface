@@ -1,14 +1,14 @@
-package jsi.connection.http;
+package com.lucaprevioo.jsi.connection.http;
 
 import java.util.List;
 
-import jsi.Request;
-import jsi.Response;
-import jsi.connection.ConnectionServer;
-import jsi.connection.http.response.HttpResponseBody;
-import jsi.connection.http.response.HttpResponseHeader;
-import jsi.connection.http.response.HttpResponseType;
-import jsi.response.ResponseHeader;
+import com.lucaprevioo.jsi.Request;
+import com.lucaprevioo.jsi.Response;
+import com.lucaprevioo.jsi.connection.ConnectionServer;
+import com.lucaprevioo.jsi.connection.http.response.HttpResponseBody;
+import com.lucaprevioo.jsi.connection.http.response.HttpResponseHeader;
+import com.lucaprevioo.jsi.connection.http.response.HttpResponseType;
+import com.lucaprevioo.jsi.response.ResponseHeader;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

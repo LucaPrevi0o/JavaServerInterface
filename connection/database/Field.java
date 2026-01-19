@@ -1,4 +1,4 @@
-package jsi.connection.database;
+package com.lucaprevioo.jsi.connection.database;
 
 /**
  * Class representing a field in a database query.

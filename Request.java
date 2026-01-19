@@ -1,4 +1,4 @@
-package jsi;
+package com.lucaprevioo.jsi;
 /**
  * Abstract class representing a generic request.
  */
